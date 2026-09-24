@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .detail-wrap {
+        background: #fff;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: var(--card-shadow);
+        display: grid;
+        grid-template-columns: 1fr 1.2fr;
+        gap: 40px;
+        margin-top: 30px;
+        margin-bottom: 50px;
+    }
+    .detail-img-box {
+        background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+        border-radius: 16px;
+        height: 380px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .detail-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--primary-dark);
+        margin-bottom: 12px;
+    }
+    .detail-price {
+        font-size: 26px;
+        font-weight: 800;
+        color: #d90429;
+        margin-bottom: 20px;
+    }
+    .spec-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 25px;
+    }
+    .spec-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #edf2f7;
+        font-size: 14px;
+    }
+    .spec-table td:first-child {
+        font-weight: 700;
+        width: 35%;
+        color: var(--text-muted);
+    }
+    .qty-wrap {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+    .qty-input {
+        width: 70px;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        text-align: center;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <a href="{{ url_for('home') }}" style="color: var(--primary); text-decoration: none; font-weight: 600;"><i class="fa-solid fa-arrow-left"></i> Quay lại danh sách sản phẩm</a>
+    
+    <div class="detail-wrap">
+        <div class="detail-img-box">
+            <i class="fa-solid fa-seedling" style="font-size: 120px; color: var(--primary);"></i>
+        </div>
+        <div class="detail-info">
+            <span class="hero-tag" style="padding: 4px 10px; font-size: 11px;">{{ product.group }}</span>
+            <h1 class="detail-title">{{ product.name }}</h1>
+            <div class="detail-price">{{ "{:,.0f}".format(product.price) }} đ</div>
+
+            <table class="spec-table">
+                <tr><td>Nguồn gốc xuất xứ</td><td>{{ product.origin }}</td></tr>
+                <tr><td>Quy cách đóng gói</td><td>{{ product.packaging }}</td></tr>
+                <tr><td>Thành phần</td><td>{{ product.ingredients }}</td></tr>
+                <tr><td>Quy trình sản xuất</td><td>{{ product.process }}</td></tr>
+                <tr><td>Hướng dẫn sử dụng</td><td>{{ product.usage }}</td></tr>
+                <tr><td>Bảo quản</td><td>{{ product.storage }}</td></tr>
+            </table>
+
+            <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST">
+                <div class="qty-wrap">
+                    <input type="number" name="qty" value="1" min="1" class="qty-input">
+                    <button type="submit" class="btn-primary" style="padding: 12px 30px;"><i class="fa-solid fa-cart-plus"></i> Thêm Vào Giỏ Hàng</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

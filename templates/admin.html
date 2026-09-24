@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="margin-top: 30px; margin-bottom: 60px;">
+    
+    <!-- Top Dashboard Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 25px; border-radius: 16px; box-shadow: var(--card-shadow); margin-bottom: 30px;">
+        <div>
+            <h2 style="font-family: 'Playfair Display', serif; color: var(--primary-dark); font-size: 24px;">Bảng Điều Khiển: {{ user.name }}</h2>
+            <span style="display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; background: {% if user.role == 'SUPER_ADMIN' %}#fee2e2; color: #991b1b;{% else %}#e0e7ff; color: #3730a3;{% endif %}">
+                Vai trò: {{ user.role }}
+            </span>
+            {% if user.role == 'DOI_TAC' %}
+                <span style="font-size: 12px; color: {% if user.approved %}#15803d{% else %}#b45309{% endif %}; font-weight: bold; margin-left: 10px;">
+                    {% if user.approved %}● Đã được Admin cấp quyền đăng bài{% else %}⚠️ Chưa được duyệt quyền đăng bài{% endif %}
+                </span>
+            {% endif %}
+        </div>
+        <a href="{{ url_for('logout') }}" style="background: #f1f5f9; color: #334155; padding: 10px 20px; border-radius: 20px; text-decoration: none; font-weight: bold;"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a>
+    </div>
+
+    <!-- 1. Quản lý Quyền Đối tác (Chỉ dành cho Super Admin) -->
+    {% if user.role == 'SUPER_ADMIN' %}
+    <div style="background: #fff; padding: 30px; border-radius: 16px; box-shadow: var(--card-shadow); margin-bottom: 30px;">
+        <h3 style="font-family: 'Playfair Display', serif; color: var(--primary-dark); font-size: 20px; margin-bottom: 20px;"><i class="fa-solid fa-user-shield"></i> Quản Lý & Phê Duyệt Quyền Đăng Bài Đối Tác</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 2px solid #edf2f7; text-align: left; background: #f8f9fa;">
+                    <th style="padding: 12px;">Tài khoản</th>
+                    <th style="padding: 12px;">Tên Đối tác / Nông trại</th>
+                    <th style="padding: 12px;">Vai trò</th>
+                    <th style="padding: 12px;">Trạng thái Duyệt</th>
+                    <th style="padding: 12px;">Thao tác Phê duyệt</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u_name, u_info in users.items() if u_info.role == 'DOI_TAC' %}
+                <tr style="border-bottom: 1px solid #edf2f7;">
+                    <td style="padding: 12px;"><b>{{ u_name }}</b></td>
+                    <td style="padding: 12px;">{{ u_info.name }}</td>
+                    <td style="padding: 12px;">{{ u_info.role }}</td>
+                    <td style="padding: 12px;">
+                        {% if u_info.approved %}
+                            <span style="background: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 12px;">ĐÃ CẤP QUYỀN</span>
+                        {% else %}
+                            <span style="background: #fef3c7; color: #b45309; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 12px;">CHỜ ADMIN DUYỆT</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 12px;">
+                        {% if not u_info.approved %}
+                            <form action="{{ url_for('approve_partner', username=u_name) }}" method="POST" style="display:inline;">
+                                <button type="submit" style="background: #16a34a; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;"><i class="fa-solid fa-check"></i> Cấp Quyền Đăng</button>
+                            </form>
+                        {% else %}
+                            <form action="{{ url_for('revoke_partner', username=u_name) }}" method="POST" style="display:inline;">
+                                <button type="submit" style="background: #dc2626; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;"><i class="fa-solid fa-lock"></i> Thu Hồi Quyền</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- 2. Form Đăng Sản Phẩm Mới (Chỉ hiển thị khi có quyền) -->
+    <div style="background: #fff; padding: 30px; border-radius: 16px; box-shadow: var(--card-shadow); margin-bottom: 30px;">
+        <h3 style="font-family: 'Playfair Display', serif; color: var(--primary-dark); font-size: 20px; margin-bottom: 10px;"><i class="fa-solid fa-plus-circle"></i> Đăng Thêm Sản Phẩm Mới Lên Hệ Thống</h3>
+        
+        {% if user.role == 'DOI_TAC' and not user.approved %}
+            <div class="alert alert-warning" style="margin-top: 15px;">
+                <i class="fa-solid fa-triangle-exclamation"></i> <b>Tài khoản Đối tác của bạn đang chờ Admin phê duyệt.</b> Bạn sẽ được mở khóa chức năng đăng sản phẩm ngay sau khi Admin kích hoạt!
+            </div>
+        {% else %}
+            <form action="{{ url_for('admin_add_product') }}" method="POST" style="margin-top: 20px;">
+                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div>
+                        <label style="font-size: 13px; font-weight: 700;">Tên sản phẩm (*):</label>
+                        <input type="text" name="name" required style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+                    </div>
+                    <div>
+                        <label style="font-size: 13px; font-weight: 700;">Nhóm danh mục (*):</label>
+                        <select name="group" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+                            <option value="Mật ong">Mật ong</option>
+                            <option value="Nghệ & Thảo dược">Nghệ & Thảo dược</option>
+                            <option value="Ngũ cốc dinh dưỡng">Ngũ cốc dinh dưỡng</option>
+                            <option value="Chè & Món ngọt đặc sản">Chè & Món ngọt đặc sản</option>
+                            <option value="Nông sản mùa vụ & Trà">Nông sản mùa vụ & Trà</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 13px; font-weight: 700;">Giá bán (VNĐ) (*):</label>
+                        <input type="number" name="price" required style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div>
+                        <label style="font-size: 13px; font-weight: 700;">Quy cách đóng gói (Chai 500ml / Hũ 500g...):</label>
+                        <input type="text" name="packaging" value="Hũ 500g" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+                    </div>
+                    <div>
+                        <label style="font-size: 13px; font-weight: 700;">Xuất xứ vùng miền:</label>
+                        <input type="text" name="origin" value="Việt Nam" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary" style="padding: 12px 30px;"><i class="fa-solid fa-cloud-arrow-up"></i> Đăng Sản Phẩm Lên Website</button>
+            </form>
+        {% endif %}
+    </div>
+
+    <!-- 3. Quản lý Đơn Hàng -->
+    <div style="background: #fff; padding: 30px; border-radius: 16px; box-shadow: var(--card-shadow); margin-bottom: 30px;">
+        <h3 style="font-family: 'Playfair Display', serif; color: var(--primary-dark); font-size: 20px; margin-bottom: 20px;"><i class="fa-solid fa-receipt"></i> Danh Sách Đơn Hàng Đặt Mua</h3>
+        {% if not orders %}
+            <p style="color: var(--text-muted);">Chưa có đơn hàng nào phát sinh.</p>
+        {% else %}
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #edf2f7; text-align: left; background: #f8f9fa;">
+                        <th style="padding: 12px;">Mã ĐH</th>
+                        <th style="padding: 12px;">Khách hàng / SĐT</th>
+                        <th style="padding: 12px;">Địa chỉ</th>
+                        <th style="padding: 12px;">Tổng tiền</th>
+                        <th style="padding: 12px;">Trạng thái</th>
+                        <th style="padding: 12px;">Cập nhật</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for o in orders %}
+                    <tr style="border-bottom: 1px solid #edf2f7;">
+                        <td style="padding: 12px;"><b>#DH{{ o.id }}</b></td>
+                        <td style="padding: 12px;">{{ o.customer }}<br><small>{{ o.phone }}</small></td>
+                        <td style="padding: 12px;">{{ o.address }}</td>
+                        <td style="padding: 12px; font-weight: bold; color: #d90429;">{{ "{:,.0f}".format(o.total) }} đ</td>
+                        <td style="padding: 12px;"><b>{{ o.status }}</b></td>
+                        <td style="padding: 12px;">
+                            <form action="{{ url_for('update_order_status', order_id=o.id) }}" method="POST">
+                                <select name="status" onchange="this.form.submit()" style="padding: 6px; border-radius: 4px;">
+                                    <option value="Mới đặt" {% if o.status == 'Mới đặt' %}selected{% endif %}>Mới đặt</option>
+                                    <option value="Đang giao" {% if o.status == 'Đang giao' %}selected{% endif %}>Đang giao</option>
+                                    <option value="Hoàn thành" {% if o.status == 'Hoàn thành' %}selected{% endif %}>Hoàn thành</option>
+                                </select>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

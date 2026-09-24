@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    /* Section Headers */
+    .section-header {
+        text-align: center;
+        margin-bottom: 35px;
+    }
+    .section-subtitle {
+        color: var(--accent-dark);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-size: 13px;
+        margin-bottom: 6px;
+    }
+    .section-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 32px;
+        color: var(--primary-dark);
+        font-weight: 800;
+    }
+
+    /* Category Filter Pills */
+    .filter-pills {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 35px;
+    }
+    .pill-btn {
+        padding: 8px 20px;
+        border-radius: 30px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+        background: #fff;
+        color: var(--text-main);
+        border: 1px solid #e0e0e0;
+        transition: var(--transition);
+    }
+    .pill-btn:hover, .pill-btn.active {
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary);
+        box-shadow: 0 4px 10px rgba(45, 106, 79, 0.2);
+    }
+
+    /* Product Grid */
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 25px;
+        margin-bottom: 50px;
+    }
+    .product-card {
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+        transition: var(--transition);
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #edf2f7;
+    }
+    .product-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+    }
+    .product-img-wrap {
+        height: 190px;
+        background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+    .product-badge {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        background: var(--primary);
+        color: white;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 20px;
+        text-transform: uppercase;
+    }
+    .product-icon {
+        font-size: 60px;
+        color: var(--primary-light);
+    }
+    .product-body {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+    }
+    .product-origin {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+    }
+    .product-name {
+        font-family: 'Playfair Display', serif;
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--text-main);
+        margin-bottom: 8px;
+        line-height: 1.3;
+        height: 44px;
+        overflow: hidden;
+    }
+    .product-name a {
+        text-decoration: none;
+        color: inherit;
+        transition: var(--transition);
+    }
+    .product-name a:hover {
+        color: var(--primary);
+    }
+    .product-meta {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-bottom: 15px;
+    }
+    .product-foot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: auto;
+        padding-top: 15px;
+        border-top: 1px dashed #e2e8f0;
+    }
+    .product-price {
+        font-size: 18px;
+        font-weight: 800;
+        color: #d90429;
+    }
+    .btn-buy {
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    .btn-buy:hover {
+        background: var(--accent);
+        color: #1b4332;
+        transform: scale(1.1);
+    }
+
+    /* Articles & News */
+    .article-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 25px;
+        margin-bottom: 50px;
+    }
+    .article-card {
+        background: #fff;
+        padding: 25px;
+        border-radius: 16px;
+        box-shadow: var(--card-shadow);
+        border-left: 4px solid var(--primary);
+    }
+    .article-date {
+        font-size: 12px;
+        color: var(--accent-dark);
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    .article-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 17px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: var(--primary-dark);
+    }
+    .article-snippet {
+        font-size: 13px;
+        color: var(--text-muted);
+        line-height: 1.6;
+    }
+
+    /* Contact Form Section */
+    .contact-section {
+        background: #fff;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: var(--card-shadow);
+        margin-bottom: 40px;
+    }
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .form-group label {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+    .form-control {
+        padding: 12px 16px;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 14px;
+    }
+    .form-control:focus {
+        border-color: var(--primary);
+        outline: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <!-- Hero Banner with local image "Dong lua.jpg" -->
+    <div class="hero-banner">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <span class="hero-tag"><i class="fa-solid fa-leaf"></i> 100% NGUYÊN CHẤT TỪ THIÊN NHIÊN</span>
+            <h2 class="hero-title">Đặc Sản Đồng Quê & Nông Sản Vùng Cao</h2>
+            <p class="hero-desc">Mật ong hoa rừng tự nhiên, tinh bột nghệ nguyên chất, ngũ cốc siêu hạt và các món chè truyền thống đậm đà tinh hoa đất Việt.</p>
+            <a href="#products" class="btn-primary"><i class="fa-solid fa-basket-shopping"></i> Khám Phá Sản Phẩm</a>
+        </div>
+    </div>
+
+    <!-- Products Section -->
+    <section id="products">
+        <div class="section-header">
+            <div class="section-subtitle">SẢN PHẨM CHỌN LỌC</div>
+            <h2 class="section-title">Danh Mục Nông Sản & Đặc Sản</h2>
+        </div>
+
+        <!-- Filter Pills -->
+        <div class="filter-pills">
+            <a href="{{ url_for('home') }}#products" class="pill-btn {% if not selected_group or selected_group == 'all' %}active{% endif %}">Tất cả ({{ products|length }})</a>
+            {% for g in groups %}
+            <a href="{{ url_for('home', group=g) }}#products" class="pill-btn {% if selected_group == g %}active{% endif %}">{{ g }}</a>
+            {% endfor %}
+        </div>
+
+        <!-- Product Cards -->
+        <div class="product-grid">
+            {% for p in products %}
+            <div class="product-card">
+                <div class="product-img-wrap">
+                    <span class="product-badge">{{ p.group }}</span>
+                    {% if p.group == 'Mật ong' %}
+                        <i class="fa-solid fa-jar product-icon" style="color: #e9c46a;"></i>
+                    {% elif p.group == 'Nghệ & Thảo dược' %}
+                        <i class="fa-solid fa-mortar-pestle product-icon" style="color: #f4a261;"></i>
+                    {% elif p.group == 'Ngũ cốc dinh dưỡng' %}
+                        <i class="fa-solid fa-wheat-awn product-icon" style="color: #2a9d8f;"></i>
+                    {% elif p.group == 'Chè & Món ngọt đặc sản' %}
+                        <i class="fa-solid fa-bowl-food product-icon" style="color: #e76f51;"></i>
+                    {% else %}
+                        <i class="fa-solid fa-leaf product-icon" style="color: #40916c;"></i>
+                    {% endif %}
+                </div>
+                <div class="product-body">
+                    <div class="product-origin"><i class="fa-solid fa-location-dot"></i> {{ p.origin }}</div>
+                    <h3 class="product-name"><a href="{{ url_for('product_detail', product_id=p.id) }}">{{ p.name }}</a></h3>
+                    <div class="product-meta">Đóng gói: <b>{{ p.packaging }}</b></div>
+                    <div class="product-foot">
+                        <div class="product-price">{{ "{:,.0f}".format(p.price) }} đ</div>
+                        <form action="{{ url_for('add_to_cart', product_id=p.id) }}" method="POST">
+                            <button type="submit" class="btn-buy" title="Thêm vào giỏ hàng"><i class="fa-solid fa-cart-plus"></i></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Articles Section -->
+    <section id="articles">
+        <div class="section-header">
+            <div class="section-subtitle">CẨM NANG HÀNG NGÀY</div>
+            <h2 class="section-title">Kiến Thức Nông Sản & Sức Khỏe</h2>
+        </div>
+        <div class="article-grid">
+            {% for a in articles %}
+            <div class="article-card">
+                <div class="article-date"><i class="fa-regular fa-calendar-check"></i> {{ a.date }}</div>
+                <h3 class="article-title">{{ a.title }}</h3>
+                <p class="article-snippet">{{ a.snippet }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact">
+        <div class="contact-section">
+            <div class="section-header">
+                <div class="section-subtitle">LIÊN HỆ & TƯ VẤN</div>
+                <h2 class="section-title">Gửi Yêu Cầu Đến Ngọ Phượng</h2>
+            </div>
+            <form action="{{ url_for('contact') }}" method="POST">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Họ và tên quý khách (*):</label>
+                        <input type="text" name="name" class="form-control" required placeholder="Nguyễn Văn A">
+                    </div>
+                    <div class="form-group">
+                        <label>Số điện thoại / Zalo (*):</label>
+                        <input type="text" name="phone" class="form-control" required placeholder="0912 xxx xxx">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label>Nội dung cần tư vấn hoặc đặt hàng số lượng lớn:</label>
+                    <textarea name="content" class="form-control" rows="3" placeholder="Tôi muốn tìm hiểu thêm về sản phẩm..."></textarea>
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%;"><i class="fa-solid fa-paper-plane"></i> Gửi Tin Nhắn Tư Vấn</button>
+            </form>
+        </div>
+    </section>
+
+</div>
+{% endblock %}

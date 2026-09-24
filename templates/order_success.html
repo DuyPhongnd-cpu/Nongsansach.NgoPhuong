@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="max-width: 650px; margin: 40px auto; background: #fff; padding: 40px; border-radius: 20px; box-shadow: var(--card-shadow); text-align: center;">
+    <i class="fa-solid fa-circle-check" style="font-size: 70px; color: #2d6a4f; margin-bottom: 20px;"></i>
+    <h2 style="font-family: 'Playfair Display', serif; font-size: 28px; color: var(--primary-dark); margin-bottom: 10px;">Đặt Hàng Thành Công!</h2>
+    <p style="color: var(--text-muted); margin-bottom: 25px;">Mã đơn hàng: <b>#DH{{ order.id }}</b>. Đội ngũ Ngọ Phượng sẽ liên hệ xác nhận đơn trong ít phút.</p>
+
+    <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; text-align: left; margin-bottom: 25px;">
+        <p><b>Khách hàng:</b> {{ order.customer }} ({{ order.phone }})</p>
+        <p><b>Địa chỉ:</b> {{ order.address }}</p>
+        <p><b>Thanh toán:</b> {{ order.payment }}</p>
+        <p><b>Tổng thanh toán:</b> <span style="color: #d90429; font-weight: bold; font-size: 18px;">{{ "{:,.0f}".format(order.total) }} đ</span></p>
+    </div>
+
+    <a href="{{ url_for('home') }}" class="btn-primary">Tiếp tục mua sắm</a>
+</div>
+{% endblock %}

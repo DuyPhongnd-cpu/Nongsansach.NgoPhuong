@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="max-width: 900px; margin: 50px auto;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; background: #fff; border-radius: 20px; box-shadow: var(--card-shadow); overflow: hidden;">
+        
+        <!-- Đăng nhập -->
+        <div style="padding: 40px;">
+            <h2 style="font-family: 'Playfair Display', serif; font-size: 24px; color: var(--primary-dark); margin-bottom: 10px;"><i class="fa-solid fa-lock"></i> Đăng Nhập Hệ Thống</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 25px;">Dành riêng cho Quản trị viên & Đối tác được phê duyệt.</p>
+
+            <form action="{{ url_for('login') }}" method="POST">
+                <div style="margin-bottom: 15px;">
+                    <label style="font-size: 13px; font-weight: 700;">Tên đăng nhập:</label>
+                    <input type="text" name="username" required style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <label style="font-size: 13px; font-weight: 700;">Mật khẩu:</label>
+                    <input type="password" name="password" required style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%;">Đăng Nhập Ngay</button>
+            </form>
+        </div>
+
+        <!-- Đăng ký tài khoản Đối tác -->
+        <div style="background: #f8f9fa; padding: 40px; border-left: 1px solid #edf2f7;">
+            <h2 style="font-family: 'Playfair Display', serif; font-size: 24px; color: var(--primary-dark); margin-bottom: 10px;"><i class="fa-solid fa-handshake"></i> Đăng Ký Đối Tác</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Trở thành đối tác cung cấp nông sản sạch cùng Ngọ Phượng (Yêu cầu Admin phê duyệt).</p>
+
+            <form action="{{ url_for('register_partner') }}" method="POST">
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 12px; font-weight: 700;">Tên Hợp tác xã / Nông trại:</label>
+                    <input type="text" name="partner_name" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc;">
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 12px; font-weight: 700;">Số điện thoại / Hotline:</label>
+                    <input type="text" name="partner_phone" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc;">
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 12px; font-weight: 700;">Tên tài khoản đăng ký:</label>
+                    <input type="text" name="partner_user" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="font-size: 12px; font-weight: 700;">Mật khẩu tạo mới:</label>
+                    <input type="password" name="partner_pass" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc;">
+                </div>
+                <button type="submit" style="background: var(--primary); color: white; border: none; padding: 10px; border-radius: 20px; font-weight: bold; width: 100%; cursor: pointer;">Gửi Yêu Cầu Đăng Ký</button>
+            </form>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

@@ -6,10 +6,10 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "nongsan_ngophuong_secret_key_2026")
 
 USERS = {
-    "admin": {"password": "***", "role": "SUPER_ADMIN", "name": "Super Admin Ngọ Phượng", "approved": True},
-    "nhanvien": {"password": "***", "role": "NHAN_VIEN", "name": "Nhân Viên Bán Hàng", "approved": True},
-    "doitac_mocchau": {"password": "***", "role": "DOI_TAC", "name": "HTX Nông Sản Mộc Châu", "approved": True},
-    "doitac_dalat": {"password": "***", "role": "DOI_TAC", "name": "Nông Trại Xanh Đà Lạt", "approved": False}
+    "admin": {"password": "123", "role": "SUPER_ADMIN", "name": "Super Admin Ngọ Phượng", "approved": True},
+    "nhanvien": {"password": "123", "role": "NHAN_VIEN", "name": "Nhân Viên Bán Hàng", "approved": True},
+    "doitac_mocchau": {"password": "123", "role": "DOI_TAC", "name": "HTX Nông Sản Mộc Châu", "approved": True},
+    "doitac_dalat": {"password": "123", "role": "DOI_TAC", "name": "Nông Trại Xanh Đà Lạt", "approved": False}
 }
 
 PRODUCTS = [
@@ -168,11 +168,11 @@ def contact():
 def login():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
-        password = ***"password", "").strip()
+        password = request.form.get("password", "").strip()
         
         user = USERS.get(username)
         if user and user["password"] == password:
-            *** user["role"] == "DOI_TAC" and not user.get("approved", False):
+            if user["role"] == "DOI_TAC" and not user.get("approved", False):
                 flash("⚠️ Tài khoản Đối tác của bạn đang CHỜ ADMIN PHÊ DUYỆT. Vui lòng liên hệ Admin để được kích hoạt quyền đăng sản phẩm!", "warning")
                 return render_template("login.html")
                 
@@ -191,7 +191,7 @@ def login():
 @app.route("/register-partner", methods=["POST"])
 def register_partner():
     partner_user = request.form.get("partner_user", "").strip()
-    partner_pass = ***"partner_pass", "").strip()
+    partner_pass = request.form.get("partner_pass", "").strip()
     partner_name = request.form.get("partner_name", "").strip()
     partner_phone = request.form.get("partner_phone", "").strip()
     

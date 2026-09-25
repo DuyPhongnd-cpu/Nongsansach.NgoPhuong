@@ -76,6 +76,12 @@
         align-items: center;
         justify-content: center;
         position: relative;
+        overflow: hidden;
+    }
+    .product-img-custom {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
     .product-badge {
         position: absolute;
@@ -88,6 +94,7 @@
         padding: 4px 10px;
         border-radius: 20px;
         text-transform: uppercase;
+        z-index: 2;
     }
     .product-icon {
         font-size: 60px;
@@ -233,14 +240,20 @@
 {% block content %}
 <div class="container">
 
-    <!-- Hero Banner with local image "Dong lua.jpg" -->
+    <!-- Hero Banner with updated Hotline & local image -->
     <div class="hero-banner">
         <div class="hero-overlay"></div>
         <div class="hero-content">
             <span class="hero-tag"><i class="fa-solid fa-leaf"></i> 100% NGUYÊN CHẤT TỪ THIÊN NHIÊN</span>
             <h2 class="hero-title">Đặc Sản Đồng Quê & Nông Sản Vùng Cao</h2>
             <p class="hero-desc">Mật ong hoa rừng tự nhiên, tinh bột nghệ nguyên chất, ngũ cốc siêu hạt và các món chè truyền thống đậm đà tinh hoa đất Việt.</p>
-            <a href="#products" class="btn-primary"><i class="fa-solid fa-basket-shopping"></i> Khám Phá Sản Phẩm</a>
+            <div class="hero-hotline">
+                <i class="fa-solid fa-phone-volume" style="color: #ffe6a7;"></i>
+                <span>Hotline / Zalo đặt hàng: <b>0863875156 - 0855512165</b></span>
+            </div>
+            <div>
+                <a href="#products" class="btn-primary"><i class="fa-solid fa-basket-shopping"></i> Khám Phá Sản Phẩm</a>
+            </div>
         </div>
     </div>
 
@@ -265,7 +278,9 @@
             <div class="product-card">
                 <div class="product-img-wrap">
                     <span class="product-badge">{{ p.group }}</span>
-                    {% if p.group == 'Mật ong' %}
+                    {% if p.image %}
+                        <img src="{{ p.image }}" alt="{{ p.name }}" class="product-img-custom">
+                    {% elif p.group == 'Mật ong' %}
                         <i class="fa-solid fa-jar product-icon" style="color: #e9c46a;"></i>
                     {% elif p.group == 'Nghệ & Thảo dược' %}
                         <i class="fa-solid fa-mortar-pestle product-icon" style="color: #f4a261;"></i>
@@ -280,7 +295,7 @@
                 <div class="product-body">
                     <div class="product-origin"><i class="fa-solid fa-location-dot"></i> {{ p.origin }}</div>
                     <h3 class="product-name"><a href="{{ url_for('product_detail', product_id=p.id) }}">{{ p.name }}</a></h3>
-                    <div class="product-meta">Đóng gói: <b>{{ p.packaging }}</b></div>
+                    <div class="product-meta">Quy cách: <b>{{ p.packaging }}</b></div>
                     <div class="product-foot">
                         <div class="product-price">{{ "{:,.0f}".format(p.price) }} đ</div>
                         <form action="{{ url_for('add_to_cart', product_id=p.id) }}" method="POST">
@@ -314,7 +329,7 @@
     <section id="contact">
         <div class="contact-section">
             <div class="section-header">
-                <div class="section-subtitle">LIÊN HỆ & TƯ VẤN</div>
+                <div class="section-subtitle">LIÊN HỆ & TƯ VẤN TRỰC TUYẾN</div>
                 <h2 class="section-title">Gửi Yêu Cầu Đến Ngọ Phượng</h2>
             </div>
             <form action="{{ url_for('contact') }}" method="POST">
@@ -325,14 +340,14 @@
                     </div>
                     <div class="form-group">
                         <label>Số điện thoại / Zalo (*):</label>
-                        <input type="text" name="phone" class="form-control" required placeholder="0912 xxx xxx">
+                        <input type="text" name="phone" class="form-control" required placeholder="0863875156 hoặc 0855512165">
                     </div>
                 </div>
                 <div class="form-group" style="margin-bottom: 20px;">
-                    <label>Nội dung cần tư vấn hoặc đặt hàng số lượng lớn:</label>
-                    <textarea name="content" class="form-control" rows="3" placeholder="Tôi muốn tìm hiểu thêm về sản phẩm..."></textarea>
+                    <label>Nội dung cần tư vấn sản phẩm hoặc báo giá sỉ/lẻ:</label>
+                    <textarea name="content" class="form-control" rows="3" placeholder="Tôi muốn tư vấn về sản phẩm..."></textarea>
                 </div>
-                <button type="submit" class="btn-primary" style="width: 100%;"><i class="fa-solid fa-paper-plane"></i> Gửi Tin Nhắn Tư Vấn</button>
+                <button type="submit" class="btn-primary" style="width: 100%;"><i class="fa-solid fa-paper-plane"></i> Gửi Tin Nhắn Tư Vấn Ngay</button>
             </form>
         </div>
     </section>

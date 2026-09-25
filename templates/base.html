@@ -159,12 +159,12 @@
         .hero-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(90deg, rgba(27, 67, 50, 0.85) 0%, rgba(27, 67, 50, 0.4) 60%, transparent 100%);
+            background: linear-gradient(90deg, rgba(27, 67, 50, 0.88) 0%, rgba(27, 67, 50, 0.45) 60%, transparent 100%);
         }
         .hero-content {
             position: relative;
             z-index: 2;
-            max-width: 600px;
+            max-width: 650px;
             padding: 0 50px;
             color: #fff;
         }
@@ -182,7 +182,7 @@
         }
         .hero-title {
             font-family: 'Playfair Display', serif;
-            font-size: 42px;
+            font-size: 40px;
             font-weight: 800;
             line-height: 1.2;
             margin-bottom: 15px;
@@ -191,8 +191,21 @@
         .hero-desc {
             font-size: 16px;
             color: #e9ecef;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
+        .hero-hotline {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(5px);
+            padding: 10px 18px;
+            border-radius: 30px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .hero-hotline b { color: #ffe6a7; font-size: 16px; }
+
         .btn-primary {
             display: inline-block;
             background: var(--accent);
@@ -223,6 +236,123 @@
         .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .alert-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
         .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .alert-info { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+
+        /* Floating Widget (Bottom-Right AI & Zalo) */
+        .floating-chat-container {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 12px;
+        }
+        .floating-btn-zalo {
+            background: #0068ff;
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(0, 104, 255, 0.4);
+            transition: var(--transition);
+        }
+        .floating-btn-zalo:hover {
+            background: #0052cc;
+            transform: translateY(-3px);
+            color: #fff;
+        }
+        .floating-btn-ai {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #fff;
+            padding: 12px 22px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 18px rgba(16, 185, 129, 0.45);
+            border: none;
+            transition: var(--transition);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        .floating-btn-ai:hover {
+            transform: translateY(-3px);
+        }
+
+        /* AI Chat Box Popup */
+        .ai-chat-box {
+            display: none;
+            width: 360px;
+            height: 460px;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            overflow: hidden;
+            flex-direction: column;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 5px;
+        }
+        .ai-chat-header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: #fff;
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .ai-chat-header h4 { font-size: 15px; font-weight: 700; }
+        .ai-chat-close { background: none; border: none; color: #fff; font-size: 18px; cursor: pointer; }
+        .ai-chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #f8fafc;
+            font-size: 13px;
+        }
+        .ai-msg { padding: 10px 14px; border-radius: 14px; max-width: 85%; line-height: 1.5; }
+        .ai-msg-bot { background: #e2e8f0; color: #1e293b; align-self: flex-start; border-bottom-left-radius: 2px; }
+        .ai-msg-user { background: var(--primary); color: #fff; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .ai-chat-input-area {
+            display: flex;
+            padding: 10px;
+            background: #fff;
+            border-top: 1px solid #edf2f7;
+        }
+        .ai-chat-input-area input {
+            flex: 1;
+            padding: 8px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 20px;
+            outline: none;
+            font-size: 13px;
+        }
+        .ai-chat-input-area button {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            margin-left: 8px;
+            cursor: pointer;
+        }
 
         /* Footer */
         footer {
@@ -265,17 +395,36 @@
             font-size: 13px;
             color: #74c69d;
         }
-        .footer-bottom a { color: #52b788; text-decoration: none; font-size: 11px; }
+        
+        /* CỔNG ĐỐI TÁC IN ĐẬM MÀU ĐỎ */
+        .partner-portal-link {
+            color: #ff3333 !important;
+            font-weight: 800 !important;
+            text-decoration: none;
+            font-size: 13px;
+            background: rgba(255, 51, 51, 0.15);
+            padding: 4px 12px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 51, 51, 0.3);
+            display: inline-block;
+            transition: var(--transition);
+        }
+        .partner-portal-link:hover {
+            color: #fff !important;
+            background: #d90429 !important;
+            border-color: #d90429 !important;
+        }
 
         @media (max-width: 900px) {
             .footer-grid { grid-template-columns: 1fr 1fr; }
             .hero-title { font-size: 30px; }
-            .hero-banner { height: 380px; }
+            .hero-banner { height: 420px; }
         }
         @media (max-width: 600px) {
             .footer-grid { grid-template-columns: 1fr; }
             .top-bar-inner { flex-direction: column; gap: 5px; text-align: center; }
             .header-inner { flex-direction: column; gap: 15px; }
+            .ai-chat-box { width: 310px; height: 420px; }
         }
     </style>
     {% block extra_css %}{% endblock %}
@@ -286,7 +435,7 @@
     <div class="top-bar">
         <div class="container top-bar-inner">
             <div class="top-info">
-                <span><i class="fa-solid fa-phone"></i> Hotline / Zalo: <b>0912.965.979 - 0983.521.268</b></span>
+                <span><i class="fa-solid fa-phone"></i> Hotline / Zalo: <b>0863875156 - 0855512165</b></span>
                 <span><i class="fa-solid fa-location-dot"></i> Nông sản sạch từ nguồn gốc thiên nhiên Việt Nam</span>
             </div>
             <div class="top-right">
@@ -334,6 +483,44 @@
 
     {% block content %}{% endblock %}
 
+    <!-- FLOATING WIDGET (BOTTOM-RIGHT: CHAT AI & ZALO) -->
+    <div class="floating-chat-container">
+        <!-- AI Chatbox Popup -->
+        <div class="ai-chat-box" id="aiChatBox">
+            <div class="ai-chat-header">
+                <div>
+                    <h4>🌾 Trợ Lý AI Nông Sản Ngọ Phượng</h4>
+                    <small style="font-size: 11px; opacity: 0.85;">Tư vấn nông sản tự động 24/7</small>
+                </div>
+                <button class="ai-chat-close" onclick="toggleAIChat()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="ai-chat-messages" id="aiChatMessages">
+                <div class="ai-msg ai-msg-bot">
+                    Xin chào anh/chị! Em là Trợ lý AI Ngọ Phượng. Anh/chị cần tư vấn về mật ong, tinh bột nghệ, ngũ cốc hay các món chè đặc sản ạ?
+                </div>
+            </div>
+            <form class="ai-chat-input-area" id="aiChatForm" onsubmit="sendAIMessage(event)">
+                <input type="text" id="aiChatInput" placeholder="Nhập câu hỏi tư vấn..." autocomplete="off">
+                <button type="submit"><i class="fa-solid fa-paper-plane"></i></button>
+            </form>
+        </div>
+
+        <!-- Nút Chat AI -->
+        <button class="floating-btn-ai" onclick="toggleAIChat()">
+            <i class="fa-solid fa-robot"></i> Trao đổi Online AI trả lời
+        </button>
+
+        <!-- Nút Chat Zalo 1: 0863875156 -->
+        <a href="https://zalo.me/0863875156" target="_blank" class="floating-btn-zalo">
+            <i class="fa-solid fa-comment-dots"></i> Chat Zalo: 0863875156
+        </a>
+
+        <!-- Nút Chat Zalo 2: 0855512165 -->
+        <a href="https://zalo.me/0855512165" target="_blank" class="floating-btn-zalo" style="background: #0084ff;">
+            <i class="fa-solid fa-comment-dots"></i> Chat Zalo: 0855512165
+        </a>
+    </div>
+
     <!-- Footer -->
     <footer>
         <div class="container">
@@ -354,24 +541,74 @@
                 <div class="footer-col">
                     <h3>HỖ TRỢ KHÁCH HÀNG</h3>
                     <ul>
-                        <li><a href="#">Chính sách giao hàng</a></li>
+                        <li><a href="#">Chính sách giao hàng toàn quốc</a></li>
                         <li><a href="#">Cam kết chất lượng 100%</a></li>
-                        <li><a href="#">Hướng dẫn bảo quản</a></li>
-                        <li><a href="#">Chính sách đổi trả</a></li>
+                        <li><a href="#">Hướng dẫn bảo quản nông sản</a></li>
+                        <li><a href="#">Chính sách đổi trả bảo đảm</a></li>
                     </ul>
                 </div>
                 <div class="footer-col">
                     <h3>KẾT NỐI VỚI CHÚNG TÔI</h3>
-                    <p><b>Hotline / Zalo:</b> 0912.965.979 - 0983.521.268</p>
+                    <p><b>Hotline / Zalo 1:</b> 0863875156</p>
+                    <p><b>Hotline / Zalo 2:</b> 0855512165</p>
                     <p><b>Email:</b> Bichphuong.ngo@gmail.com</p>
-                    <p><b>Email kỹ thuật:</b> duyphongnd@gmail.com</p>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2026 Nông Sản Ngọ Phượng. Bản quyền thuộc về Ngọ Phượng Store. | <a href="{{ url_for('login') }}">Cổng Đối Tác</a></p>
+                <p>&copy; 2026 Nông Sản Ngọ Phượng. Bản quyền thuộc về Ngọ Phượng Store. | <a href="{{ url_for('login') }}" class="partner-portal-link"><i class="fa-solid fa-key"></i> <b>Cổng Đối Tác</b></a></p>
             </div>
         </div>
     </footer>
+
+    <script>
+        function toggleAIChat() {
+            const chatBox = document.getElementById("aiChatBox");
+            if (chatBox.style.display === "flex") {
+                chatBox.style.display = "none";
+            } else {
+                chatBox.style.display = "flex";
+                document.getElementById("aiChatInput").focus();
+            }
+        }
+
+        async function sendAIMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById("aiChatInput");
+            const msgContainer = document.getElementById("aiChatMessages");
+            const text = input.value.trim();
+            if (!text) return;
+
+            // Render User message
+            const userDiv = document.createElement("div");
+            userDiv.className = "ai-msg ai-msg-user";
+            userDiv.innerText = text;
+            msgContainer.appendChild(userDiv);
+            input.value = "";
+            msgContainer.scrollTop = msgContainer.scrollHeight;
+
+            // Call API
+            try {
+                const res = await fetch("/api/ai-chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: text })
+                });
+                const data = await res.json();
+                
+                const botDiv = document.createElement("div");
+                botDiv.className = "ai-msg ai-msg-bot";
+                botDiv.innerText = data.reply || "Dạ em đã ghi nhận yêu cầu của anh/chị ạ!";
+                msgContainer.appendChild(botDiv);
+                msgContainer.scrollTop = msgContainer.scrollHeight;
+            } catch (err) {
+                const botDiv = document.createElement("div");
+                botDiv.className = "ai-msg ai-msg-bot";
+                botDiv.innerText = "Dạ hệ thống AI đang bận chút, anh/chị có thể nhắn qua Zalo 0863875156 để được hỗ trợ tức thì nhé!";
+                msgContainer.appendChild(botDiv);
+                msgContainer.scrollTop = msgContainer.scrollHeight;
+            }
+        }
+    </script>
 
 </body>
 </html>

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, Response
 import os
 import json
 from datetime import datetime
@@ -33,168 +33,168 @@ PRODUCTS = [
         "packaging": "Chai 500ml", "rating": 5, "origin": "Hà Giang - Cao Bằng", 
         "ingredients": "100% mật hoa cỏ kim tự nhiên", "process": "Quay li tâm thủ công truyền thống", 
         "usage": "Pha nước ấm uống mỗi sáng hoặc làm gia vị món ăn", "storage": "Nơi khô ráo, thoáng mát, tránh ánh nắng trực tiếp", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     },
     {
         "id": 2, "group": "Mật ong", "name": "Mật ong bạc hà Hà Giang", "price": 350000, 
         "packaging": "Chai 500ml", "rating": 5, "origin": "Cao nguyên đá Đồng Văn", 
         "ingredients": "Mật hoa bạc hà tự nhiên", "process": "Thu hoạch chính vụ đông", 
         "usage": "Uống trực tiếp, pha trà thảo mộc", "storage": "Nhiệt độ phòng, tránh ánh nắng", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     },
     {
         "id": 3, "group": "Mật ong", "name": "Mật ong Sú vẹt Giao Thủy", "price": 250000, 
         "packaging": "Chai 500ml", "rating": 5, "origin": "Vườn quốc gia Xuân Thủy", 
         "ingredients": "Mật hoa sú vẹt rừng ngập mặn", "process": "Khai thác tự nhiên sạch", 
         "usage": "Bồi bổ sức khỏe, tăng đề kháng", "storage": "Nơi khô ráo, thoáng mát", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     },
     {
         "id": 4, "group": "Mật ong", "name": "Mật ong hoa nhãn Hưng Yên", "price": 180000, 
         "packaging": "Chai 500ml", "rating": 5, "origin": "Hưng Yên", 
         "ingredients": "100% mật hoa nhãn thơm lừng", "process": "Quay mật chuẩn VietGAP", 
         "usage": "Pha nước giải khát, chế biến món ăn", "storage": "Tránh nắng trực tiếp", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     },
     {
         "id": 5, "group": "Nghệ & Thảo dược", "name": "Tinh bột nghệ vàng Nghệ An", "price": 200000, 
         "packaging": "Hũ 500g", "rating": 5, "origin": "Nghệ An", 
         "ingredients": "Nghệ vàng củ tươi nguyên chất", "process": "Lọc tách xơ, dầu và tạp chất", 
         "usage": "Uống cùng mật ong ấm trị đau dạ dày", "storage": "Đậy kín hũ sau khi dùng", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     },
     {
         "id": 6, "group": "Nghệ & Thảo dược", "name": "Tinh bột nghệ đen Nghệ An", "price": 220000, 
         "packaging": "Hũ 500g", "rating": 5, "origin": "Nghệ An", 
         "ingredients": "Nghệ đen nguyên chất 100%", "process": "Sấy lạnh công nghệ cao", 
         "usage": "Hỗ trợ tiêu hóa, bồi bổ phụ nữ sau sinh", "storage": "Bảo quản nơi mát mẻ", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     },
     {
         "id": 7, "group": "Nghệ & Thảo dược", "name": "Bột sắn dây ướp hoa bưởi", "price": 160000, 
         "packaging": "Túi zip 500g", "rating": 5, "origin": "Kinh Môn - Hải Dương", 
         "ingredients": "Củ sắn dây ta, hoa bưởi tươi", "process": "Lọc lắng 25 lần, sấy khô tiệt trùng", 
         "usage": "Pha uống sống hoặc nấu chín thanh nhiệt", "storage": "Bảo quản nơi khô ráo", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     },
     {
         "id": 8, "group": "Ngũ cốc dinh dưỡng", "name": "Ngũ cốc Lúa mạch nguyên cám", "price": 110000, 
         "packaging": "Hũ 500g", "rating": 5, "origin": "Đồng bằng sông Hồng", 
         "ingredients": "Lúa mạch nguyên cám giàu xơ", "process": "Rang sấy nhiệt thấp giữ nguyên vitamin", 
         "usage": "Ăn kèm sữa chua, sữa hạt", "storage": "Đậy kín nắp hộp", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     },
     {
         "id": 9, "group": "Ngũ cốc dinh dưỡng", "name": "Ngũ cốc Bắp ngô sấy giòn", "price": 90000, 
         "packaging": "Gói 500g", "rating": 5, "origin": "Mộc Châu - Sơn La", 
         "ingredients": "Ngô ngọt tự nhiên không đường hóa học", "process": "Sấy thăng hoa giòn rụm", 
         "usage": "Bữa sáng nhẹ, ăn vặt lành mạnh", "storage": "Nơi khô ráo", 
-        "image": "", "status": "approved", "author": "HTX Nông Sản Mộc Châu", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "HTX Nông Sản Mộc Châu", "date": "25/09/2026"
     },
     {
         "id": 10, "group": "Ngũ cốc dinh dưỡng", "name": "Ngũ cốc Lúa mỳ dinh dưỡng", "price": 105000, 
         "packaging": "Gói 500g", "rating": 5, "origin": "Phú Thọ", 
         "ingredients": "Lúa mỳ nguyên cám chọn lọc", "process": "Nghiền sấy tiệt trùng", 
         "usage": "Chế độ ăn kiêng, tập gym", "storage": "Nơi thoáng mát", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     },
     {
         "id": 11, "group": "Ngũ cốc dinh dưỡng", "name": "Ngũ cốc Granola Siêu Hạt", "price": 175000, 
         "packaging": "Hũ 500g", "rating": 5, "origin": "Tây Nguyên", 
         "ingredients": "Hạt điều, óc chó, macca, hạnh nhân, yến mạch", "process": "Nướng mật ong nguyên chất", 
         "usage": "Ăn liền cùng sữa chua, sinh tố", "storage": "Ngăn mát tủ lạnh sau mở nắp", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     },
     {
         "id": 12, "group": "Ngũ cốc dinh dưỡng", "name": "Hạt Macca sấy nứt vỏ Đắk Lắk", "price": 160000, 
         "packaging": "Hũ 500g", "rating": 5, "origin": "Đắk Lắk", 
         "ingredients": "100% hạt macca size đại VIP", "process": "Sấy nứt tự nhiên kèm dụng cụ tách", 
         "usage": "Ăn trực tiếp 5-10 hạt mỗi ngày", "storage": "Nơi khô ráo, đậy kín", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     },
     {
         "id": 13, "group": "Chè & Món ngọt đặc sản", "name": "Chè bưởi thơm ngon An Giang", "price": 35000, 
         "packaging": "Cốc 350ml", "rating": 5, "origin": "An Giang", 
         "ingredients": "Cùi bưởi giòn sần sật, nước cốt dừa béo ngậy", "process": "Khử đắng thủ công gia truyền", 
         "usage": "Ăn kèm đá lạnh giải khát", "storage": "Bảo quản ngăn mát 2-3 ngày", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     },
     {
         "id": 14, "group": "Chè & Món ngọt đặc sản", "name": "Chè bắp nước cốt dừa Hội An", "price": 30000, 
         "packaging": "Cốc 350ml", "rating": 5, "origin": "Hội An", 
         "ingredients": "Bắp non dẻo ngọt, cốt dừa tươi", "process": "Nấu bắp ninh dẻo sánh thơm", 
         "usage": "Dùng tráng miệng, giải nhiệt", "storage": "Dùng trong ngày", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     },
     {
         "id": 15, "group": "Chè & Món ngọt đặc sản", "name": "Chè hạt sen long nhãn Phố Hiến", "price": 45000, 
         "packaging": "Cốc 350ml", "rating": 5, "origin": "Huế - Hưng Yên", 
         "ingredients": "Hạt sen bở tơi, long nhãn tiến vua, đường phèn", "process": "Lồng nhãn thủ công nấu mềm ngọt thanh", 
         "usage": "An thần, thanh nhiệt, ngủ ngon", "storage": "Bảo quản ngăn mát tủ lạnh", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     },
     {
         "id": 16, "group": "Chè & Món ngọt đặc sản", "name": "Chè đậu xanh cốt dừa truyền thống", "price": 25000, 
         "packaging": "Cốc 350ml", "rating": 5, "origin": "Hà Nội", 
         "ingredients": "Đậu xanh tiêu xay vỡ, cốt dừa Bến Tre", "process": "Nấu sánh dẻo thơm ngậy", 
         "usage": "Thanh nhiệt mùa hè", "storage": "Bảo quản mát", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     },
     {
         "id": 17, "group": "Chè & Món ngọt đặc sản", "name": "Chè đậu đen xanh lòng dầm đá", "price": 25000, 
         "packaging": "Cốc 350ml", "rating": 5, "origin": "Hà Nội", 
         "ingredients": "Đậu đen xanh lòng hảo hạng", "process": "Ninh nhừ tơi hạt, ngọt thanh", 
         "usage": "Bổ thận, mát gan, giải độc", "storage": "Dùng ngon trong ngày", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     },
     {
         "id": 18, "group": "Nông sản mùa vụ & Trà", "name": "Thạch đen Cao Bằng (Sương sáo)", "price": 45000, 
         "packaging": "Hộp 1kg", "rating": 5, "origin": "Thạch An - Cao Bằng", 
         "ingredients": "Cây thạch đen tự nhiên vùng núi", "process": "Nấu thủ công theo công thức Tày - Nùng", 
         "usage": "Cắt miếng ăn kèm chè, sữa tươi, sữa đậu", "storage": "Ngăn mát tủ lạnh 5-7 ngày", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     },
     {
         "id": 19, "group": "Nông sản mùa vụ & Trà", "name": "Trà Shan Tuyết cổ thụ Suối Giàng", "price": 250000, 
         "packaging": "Hộp 200g", "rating": 5, "origin": "Yên Bái", 
         "ingredients": "1 búp 1 lá chè cổ thụ trên 300 năm", "process": "Sao tay truyền thống của đồng bào Mông", 
         "usage": "Pha nước sôi 85°C thưởng thức", "storage": "Bảo quản nơi khô ráo, tránh mùi lạ", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     },
     {
         "id": 20, "group": "Nông sản mùa vụ & Trà", "name": "Hồng sấy treo gió Mộc Châu", "price": 190000, 
         "packaging": "Hộp 500g", "rating": 5, "origin": "Mộc Châu", 
         "ingredients": "Hồng trứng tuyển chọn vỏ mỏng", "process": "Treo gió tự nhiên theo công nghệ Nhật Bản", 
         "usage": "Ăn trực tiếp thưởng thức mật hồng dẻo", "storage": "Bảo quản tủ mát", 
-        "image": "", "status": "approved", "author": "HTX Nông Sản Mộc Châu", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "HTX Nông Sản Mộc Châu", "date": "25/09/2026"
     },
     {
         "id": 21, "group": "Nông sản mùa vụ & Trà", "name": "Tỏi cô đơn Lý Sơn chính hiệu", "price": 280000, 
         "packaging": "Túi 500g", "rating": 5, "origin": "Đảo Lý Sơn - Quảng Ngãi", 
         "ingredients": "100% tỏi một nhánh đất núi lửa Lý Sơn", "process": "Phơi khô tự nhiên dưới nắng biển", 
         "usage": "Làm gia vị, ngâm mật ong/rượu chữa bệnh", "storage": "Treo nơi thoáng mát", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     },
     {
         "id": 22, "group": "Nông sản mùa vụ & Trà", "name": "Miến dong Phia Đén Cao Bằng", "price": 65000, 
         "packaging": "Gói 500g", "rating": 5, "origin": "Nguyên Bình - Cao Bằng", 
         "ingredients": "100% củ dong riềng đỏ vùng núi cao", "process": "Làm thủ công không tẩy hóa chất, sợi dai dòn", 
         "usage": "Nấu canh măng, lẩu, xào lòng mề", "storage": "Để nơi khô ráo", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     },
     {
         "id": 23, "group": "Nông sản mùa vụ & Trà", "name": "Măng nứa khô Tây Bắc sạch", "price": 170000, 
         "packaging": "Túi 500g", "rating": 5, "origin": "Điện Biên", 
         "ingredients": "Măng nứa tép non phơi nắng", "process": "Thu hái rừng tự nhiên, sấy nắng sạch", 
         "usage": "Ngâm mềm nấu canh sườn, gà, vịt", "storage": "Buộc kín miệng túi", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     },
     {
         "id": 24, "group": "Nông sản mùa vụ & Trà", "name": "Gạo Séng Cù Mường Lò dẻo thơm", "price": 185000, 
         "packaging": "Túi 5kg", "rating": 5, "origin": "Mường Lò - Nghĩa Lộ", 
         "ingredients": "Lúa Séng Cù trồng ruộng bậc thang", "process": "Xát mộc giữ trọn lớp cám dưỡng chất", 
         "usage": "Nấu cơm dẻo ngọt đậm đà", "storage": "Thùng đậy kín chống ẩm", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "24/09/2026"
+        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
     }
 ]
 
@@ -209,6 +209,27 @@ ORDERS = []
 MESSAGES = []
 
 # ---------------------------------------------------------
+# SEO: SITEMAP.XML & ROBOTS.TXT
+# ---------------------------------------------------------
+@app.route("/sitemap.xml")
+def sitemap():
+    base_url = "https://nongsan.top"
+    approved_products = [p for p in PRODUCTS if p.get("status", "approved") == "approved"]
+    
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    xml += f'  <url><loc>{base_url}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>\n'
+    for p in approved_products:
+        xml += f'  <url><loc>{base_url}/product/{p["id"]}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>\n'
+    xml += '</urlset>'
+    return Response(xml, mimetype='application/xml')
+
+@app.route("/robots.txt")
+def robots():
+    content = "User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /login\nDisallow: /portal\nSitemap: https://nongsan.top/sitemap.xml\n"
+    return Response(content, mimetype='text/plain')
+
+# ---------------------------------------------------------
 # 3. SHOPPING ROUTES
 # ---------------------------------------------------------
 @app.route("/")
@@ -217,7 +238,6 @@ def home():
     cart_count = sum(cart.values())
     selected_group = request.args.get("group")
     
-    # Chỉ hiển thị các sản phẩm ĐÃ ĐƯỢC DUYỆT (approved)
     approved_products = [p for p in PRODUCTS if p.get("status", "approved") == "approved"]
     
     if selected_group and selected_group != "all":
@@ -330,7 +350,7 @@ def contact():
     return redirect(url_for("home"))
 
 # ---------------------------------------------------------
-# 4. CHATBOT AI TRẢ LỜI TỰ ĐỘNG (API CHO WIDGET GÓC PHẢI)
+# 4. CHATBOT AI TRẢ LỜI TỰ ĐỘNG
 # ---------------------------------------------------------
 @app.route("/api/ai-chat", methods=["POST"])
 def ai_chat():
@@ -358,7 +378,7 @@ def ai_chat():
     return jsonify({"reply": reply})
 
 # ---------------------------------------------------------
-# 5. CỔNG ĐĂNG NHẬP, ĐĂNG KÝ VÀ ĐỔI MẬT KHẨU
+# 5. CỔNG ĐĂNG NHẬP & ĐỔI MẬT KHẨU
 # ---------------------------------------------------------
 @app.route("/portal", methods=["GET", "POST"])
 @app.route("/login", methods=["GET", "POST"])
@@ -449,7 +469,7 @@ def logout():
     return redirect(url_for("home"))
 
 # ---------------------------------------------------------
-# 6. ADMIN DASHBOARD: QUẢN LÝ SẢN PHẨM, ẢNH, BÀI ĐĂNG, ĐƠN HÀNG
+# 6. ADMIN DASHBOARD: QUẢN LÝ, SỬA, XÓA SẢN PHẨM & BÀI ĐĂNG
 # ---------------------------------------------------------
 @app.route("/admin")
 def admin_dashboard():
@@ -463,7 +483,6 @@ def admin_dashboard():
         display_products = PRODUCTS
         pending_products = [p for p in PRODUCTS if p.get("status") == "pending"]
     else:
-        # Đối tác chỉ thấy sản phẩm của mình
         display_products = [p for p in PRODUCTS if p.get("author") == user["name"]]
         pending_products = []
         
@@ -500,7 +519,6 @@ def revoke_partner(username):
         flash(f"🔒 Đã tạm dừng quyền đăng bài của đối tác: {USERS[username]['name']}")
     return redirect(url_for("admin_dashboard"))
 
-# Phê duyệt bài đăng sản phẩm của Đối tác
 @app.route("/admin/approve-product/<int:product_id>", methods=["POST"])
 def approve_product(product_id):
     user = session.get("user")
@@ -514,7 +532,6 @@ def approve_product(product_id):
             break
     return redirect(url_for("admin_dashboard"))
 
-# Từ chối duyệt bài đăng sản phẩm
 @app.route("/admin/reject-product/<int:product_id>", methods=["POST"])
 def reject_product(product_id):
     user = session.get("user")
@@ -527,6 +544,54 @@ def reject_product(product_id):
             flash(f"⚠️ Đã từ chối bài đăng sản phẩm: {p['name']}")
             break
     return redirect(url_for("admin_dashboard"))
+
+# CHỈNH SỬA SẢN PHẨM (NÚT SỬA CẠNH NÚT XÓA)
+@app.route("/admin/edit-product/<int:product_id>", methods=["GET", "POST"])
+def edit_product(product_id):
+    user = session.get("user")
+    if not user:
+        return redirect(url_for("login"))
+        
+    is_admin = user["role"] in ["SUPER_ADMIN", "NHAN_VIEN"]
+    product = next((p for p in PRODUCTS if p["id"] == product_id), None)
+    
+    if not product:
+        flash("Không tìm thấy sản phẩm cần sửa!", "warning")
+        return redirect(url_for("admin_dashboard"))
+        
+    if not is_admin and product.get("author") != user["name"]:
+        flash("⛔ Bạn không có quyền sửa sản phẩm này!", "danger")
+        return redirect(url_for("admin_dashboard"))
+        
+    if request.method == "POST":
+        product["name"] = request.form.get("name", "").strip()
+        product["group"] = request.form.get("group", "Mật ong")
+        try:
+            product["price"] = int(request.form.get("price", 0))
+        except ValueError:
+            pass
+            
+        product["packaging"] = request.form.get("packaging", "").strip()
+        product["origin"] = request.form.get("origin", "").strip()
+        product["ingredients"] = request.form.get("ingredients", "").strip()
+        product["process"] = request.form.get("process", "").strip()
+        product["usage"] = request.form.get("usage", "").strip()
+        product["storage"] = request.form.get("storage", "").strip()
+        
+        image_url = request.form.get("image_url", "").strip()
+        uploaded_file = request.files.get("image_file")
+        if uploaded_file and uploaded_file.filename != '' and allowed_file(uploaded_file.filename):
+            fname = secure_filename(f"prod_{int(datetime.now().timestamp())}_{uploaded_file.filename}")
+            save_path = os.path.join(app.config['UPLOAD_FOLDER'], fname)
+            uploaded_file.save(save_path)
+            product["image"] = f"/static/uploads/{fname}"
+        elif image_url:
+            product["image"] = image_url
+            
+        flash(f"✅ Đã cập nhật thành công sản phẩm: {product['name']}!", "success")
+        return redirect(url_for("admin_dashboard"))
+        
+    return render_template("edit_product.html", product=product, user=user)
 
 # Xóa sản phẩm
 @app.route("/admin/delete-product/<int:product_id>", methods=["POST"])
@@ -547,7 +612,7 @@ def delete_product(product_id):
             flash("⛔ Bạn không có quyền xóa sản phẩm của người khác!", "danger")
     return redirect(url_for("admin_dashboard"))
 
-# Đăng bài viết / Sản phẩm mới với đầy đủ các trường chi tiết & Upload ảnh
+# Đăng sản phẩm mới
 @app.route("/admin/add-product", methods=["POST"])
 def admin_add_product():
     user = session.get("user")
@@ -576,7 +641,6 @@ def admin_add_product():
     storage = request.form.get("storage", "").strip() or "Bảo quản nơi khô ráo, thoáng mát"
     image_url = request.form.get("image_url", "").strip()
     
-    # Xử lý Upload file ảnh từ máy tính / điện thoại
     uploaded_file = request.files.get("image_file")
     if uploaded_file and uploaded_file.filename != '' and allowed_file(uploaded_file.filename):
         fname = secure_filename(f"prod_{int(datetime.now().timestamp())}_{uploaded_file.filename}")
@@ -584,7 +648,6 @@ def admin_add_product():
         uploaded_file.save(save_path)
         image_url = f"/static/uploads/{fname}"
 
-    # Nếu là Admin đăng thì approved luôn, nếu là Đối tác thì pending chờ duyệt
     status = "approved" if is_admin else "pending"
     
     new_p = {
@@ -613,40 +676,6 @@ def admin_add_product():
         
     return redirect(url_for("admin_dashboard"))
 
-# Thêm tin tức / bài viết kiến thức mới
-@app.route("/admin/add-article", methods=["POST"])
-def admin_add_article():
-    user = session.get("user")
-    if not user or user["role"] not in ["SUPER_ADMIN", "NHAN_VIEN"]:
-        return "Bạn không có quyền!", 403
-        
-    title = request.form.get("title", "").strip()
-    snippet = request.form.get("snippet", "").strip()
-    
-    new_art = {
-        "id": len(ARTICLES) + 1,
-        "date": datetime.now().strftime("%d/%m/%Y"),
-        "title": title,
-        "snippet": snippet,
-        "author": user["name"]
-    }
-    ARTICLES.insert(0, new_art)
-    flash(f"📰 Đã đăng bài viết mới: {title}!", "success")
-    return redirect(url_for("admin_dashboard"))
-
-# Xóa bài viết kiến thức
-@app.route("/admin/delete-article/<int:article_id>", methods=["POST"])
-def delete_article(article_id):
-    user = session.get("user")
-    if not user or user["role"] not in ["SUPER_ADMIN", "NHAN_VIEN"]:
-        return "Bạn không có quyền!", 403
-        
-    global ARTICLES
-    ARTICLES = [a for a in ARTICLES if a.get("id") != article_id]
-    flash("🗑️ Đã xóa bài viết thành công!", "success")
-    return redirect(url_for("admin_dashboard"))
-
-# Cập nhật trạng thái đơn hàng
 @app.route("/admin/update-order/<int:order_id>", methods=["POST"])
 def update_order_status(order_id):
     user = session.get("user")

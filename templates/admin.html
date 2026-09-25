@@ -185,7 +185,7 @@
         {% endif %}
     </div>
 
-    <!-- 3. Quản lý & Xóa Sản Phẩm Đã Đăng -->
+    <!-- 3. Quản lý, SỬA & XÓA Sản Phẩm Đã Đăng -->
     <div style="background: #fff; padding: 30px; border-radius: 16px; box-shadow: var(--card-shadow); margin-bottom: 30px;">
         <h3 style="font-family: 'Playfair Display', serif; color: var(--primary-dark); font-size: 20px; margin-bottom: 20px;"><i class="fa-solid fa-boxes-stacked"></i> Danh Sách Sản Phẩm Đang Hoạt Động ({{ products|length }})</h3>
         <table style="width: 100%; border-collapse: collapse;">
@@ -196,7 +196,7 @@
                     <th style="padding: 12px;">Danh mục</th>
                     <th style="padding: 12px;">Giá</th>
                     <th style="padding: 12px;">Người đăng</th>
-                    <th style="padding: 12px;">Thao tác</th>
+                    <th style="padding: 12px;">Thao tác Quản lý</th>
                 </tr>
             </thead>
             <tbody>
@@ -211,9 +211,18 @@
                     <td style="padding: 12px; font-weight: bold; color: #d90429;">{{ "{:,.0f}".format(p.price) }} đ</td>
                     <td style="padding: 12px;"><small>{{ p.author }}</small></td>
                     <td style="padding: 12px;">
-                        <form action="{{ url_for('delete_product', product_id=p.id) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?');">
-                            <button type="submit" style="background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer;"><i class="fa-solid fa-trash"></i> Xóa</button>
-                        </form>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <!-- NÚT SỬA SẢN PHẨM -->
+                            <a href="{{ url_for('edit_product', product_id=p.id) }}" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                                <i class="fa-solid fa-pen-to-square"></i> Sửa
+                            </a>
+                            <!-- NÚT XÓA SẢN PHẨM -->
+                            <form action="{{ url_for('delete_product', product_id=p.id) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?');" style="margin: 0;">
+                                <button type="submit" style="background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="fa-solid fa-trash"></i> Xóa
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -268,7 +277,7 @@
         <form action="{{ url_for('change_password') }}" method="POST">
             <div style="margin-bottom: 15px;">
                 <label style="font-size: 13px; font-weight: 700;">Mật khẩu hiện tại (*):</label>
-                <input type="password" name="old_password" required placeholder="Nhập mật khẩu cũ..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+                <input type="password" name="old_password" required placeholder="Nhập mật khẩu cũ (mặc định là 123)..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
             </div>
             <div style="margin-bottom: 15px;">
                 <label style="font-size: 13px; font-weight: 700;">Mật khẩu mới (*):</label>

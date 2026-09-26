@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin: 40px auto; background: #fff; padding: 40px; border-radius: 20px; box-shadow: var(--card-shadow);">
+    <a href="{{ url_for('home') }}#articles" style="color: var(--primary); text-decoration: none; font-weight: 600;"><i class="fa-solid fa-arrow-left"></i> Quay lại Cẩm nang kiến thức</a>
+    
+    <div style="margin-top: 20px;">
+        <span class="hero-tag" style="padding: 4px 10px; font-size: 11px;"><i class="fa-regular fa-calendar-check"></i> {{ article.date }}</span>
+        <h1 style="font-family: 'Playfair Display', serif; font-size: 28px; color: var(--primary-dark); margin: 15px 0 20px 0; line-height: 1.3;">{{ article.title }}</h1>
+        <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 25px; border-bottom: 1px solid #edf2f7; padding-bottom: 15px;">
+            <span>Tác giả: <b>{{ article.author }}</b></span> | <span>Chuyên mục: <b>Nông Sản & Sức Khỏe</b></span>
+        </div>
+
+        <div style="font-size: 15px; line-height: 1.8; color: var(--text-main);">
+            <p style="font-weight: 600; font-size: 16px; margin-bottom: 15px; color: #1b4332;">{{ article.snippet }}</p>
+            <div>
+                {{ article.content | safe }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

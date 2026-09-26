@@ -16,9 +16,12 @@
                 </span>
             {% endif %}
         </div>
-        <div style="display: flex; gap: 10px;">
-            <a href="#change-password-box" style="background: #e2e8f0; color: #334155; padding: 10px 18px; border-radius: 20px; text-decoration: none; font-weight: bold; font-size: 13px;"><i class="fa-solid fa-key"></i> Đổi mật khẩu</a>
-            <a href="{{ url_for('logout') }}" style="background: #fee2e2; color: #991b1b; padding: 10px 18px; border-radius: 20px; text-decoration: none; font-weight: bold; font-size: 13px;"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            {% if user.role == 'SUPER_ADMIN' %}
+            <a href="{{ url_for('export_backup') }}" style="background: #10b981; color: #fff; padding: 10px 16px; border-radius: 20px; text-decoration: none; font-weight: bold; font-size: 13px;"><i class="fa-solid fa-download"></i> Tải Backup JSON</a>
+            {% endif %}
+            <a href="#change-password-box" style="background: #e2e8f0; color: #334155; padding: 10px 16px; border-radius: 20px; text-decoration: none; font-weight: bold; font-size: 13px;"><i class="fa-solid fa-key"></i> Đổi mật khẩu</a>
+            <a href="{{ url_for('logout') }}" style="background: #fee2e2; color: #991b1b; padding: 10px 16px; border-radius: 20px; text-decoration: none; font-weight: bold; font-size: 13px;"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a>
         </div>
     </div>
 
@@ -45,7 +48,7 @@
                 <tr style="border-bottom: 1px solid #edf2f7;">
                     <td style="padding: 12px;"><b>{{ p.author }}</b></td>
                     <td style="padding: 12px;">{{ p.name }}</td>
-                    <td style="padding: 12px;">{{ p.group }}</td>
+                    <td style="padding: 12px;">{{ p.group_name }}</td>
                     <td style="padding: 12px; font-weight: bold; color: #d90429;">{{ "{:,.0f}".format(p.price) }} đ</td>
                     <td style="padding: 12px;">{{ p.packaging }} / {{ p.origin }}</td>
                     <td style="padding: 12px; display: flex; gap: 8px;">
@@ -105,9 +108,9 @@
     </div>
     {% endif %}
 
-    <!-- 2. Form Đăng Bài / Sản Phẩm Mới (Đầy Đủ Các Trường & Upload Ảnh) -->
+    <!-- 2. Form Đăng Sản Phẩm Mới (Đầy Đủ Các Trường & Upload Ảnh) -->
     <div style="background: #fff; padding: 30px; border-radius: 16px; box-shadow: var(--card-shadow); margin-bottom: 30px;">
-        <h3 style="font-family: 'Playfair Display', serif; color: var(--primary-dark); font-size: 20px; margin-bottom: 10px;"><i class="fa-solid fa-cloud-arrow-up"></i> Đăng Bài Viết & Sản Phẩm Mới Lên Website</h3>
+        <h3 style="font-family: 'Playfair Display', serif; color: var(--primary-dark); font-size: 20px; margin-bottom: 10px;"><i class="fa-solid fa-cloud-arrow-up"></i> Đăng Sản Phẩm Mới Lên Website</h3>
         
         {% if user.role == 'DOI_TAC' and not user.approved %}
             <div class="alert alert-warning" style="margin-top: 15px;">
@@ -180,45 +183,75 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn-primary" style="padding: 12px 35px; font-size: 15px;"><i class="fa-solid fa-paper-plane"></i> Đăng Bài Sản Phẩm</button>
+                <button type="submit" class="btn-primary" style="padding: 12px 35px; font-size: 15px;"><i class="fa-solid fa-paper-plane"></i> Đăng Sản Phẩm</button>
             </form>
         {% endif %}
     </div>
 
-    <!-- 3. Quản lý, SỬA & XÓA Sản Phẩm Đã Đăng -->
+    <!-- 3. Form ĐĂNG BÀI VIẾT MỚI (CẨM NANG SỨC KHỎE) -->
+    {% if user.role in ['SUPER_ADMIN', 'NHAN_VIEN'] %}
     <div style="background: #fff; padding: 30px; border-radius: 16px; box-shadow: var(--card-shadow); margin-bottom: 30px;">
-        <h3 style="font-family: 'Playfair Display', serif; color: var(--primary-dark); font-size: 20px; margin-bottom: 20px;"><i class="fa-solid fa-boxes-stacked"></i> Danh Sách Sản Phẩm Đang Hoạt Động ({{ products|length }})</h3>
+        <h3 style="font-family: 'Playfair Display', serif; color: var(--primary-dark); font-size: 20px; margin-bottom: 10px;"><i class="fa-solid fa-newspaper"></i> Đăng Bài Viết Mới (Cẩm Nang Sức Khỏe)</h3>
+        <form action="{{ url_for('admin_add_article') }}" method="POST" style="margin-top: 15px;">
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 13px; font-weight: 700;">Tiêu đề bài viết (*):</label>
+                <input type="text" name="title" required placeholder="Ví dụ: Công dụng tuyệt vời của mật ong hoa rừng..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 13px; font-weight: 700;">Tóm tắt ngắn (Hiển thị ngoài trang chủ) (*):</label>
+                <textarea name="snippet" required rows="2" placeholder="Tóm tắt ngắn gọn nội dung bài viết..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-family: inherit;"></textarea>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="font-size: 13px; font-weight: 700;">Nội dung chi tiết bài viết:</label>
+                <textarea name="content" rows="4" placeholder="Nội dung chi tiết bài chia sẻ kiến thức..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-family: inherit;"></textarea>
+            </div>
+            <button type="submit" class="btn-primary" style="padding: 10px 25px;"><i class="fa-solid fa-pen"></i> Đăng Bài Viết Cẩm Nang</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- 4. Quản lý, SẮP XẾP THỨ TỰ (⬆️ / ⬇️), SỬA & XÓA Sản Phẩm -->
+    <div style="background: #fff; padding: 30px; border-radius: 16px; box-shadow: var(--card-shadow); margin-bottom: 30px;">
+        <h3 style="font-family: 'Playfair Display', serif; color: var(--primary-dark); font-size: 20px; margin-bottom: 15px;"><i class="fa-solid fa-boxes-stacked"></i> Danh Sách Sản Phẩm (Sắp Xếp Thứ Tự, Sửa & Xóa)</h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">*Bấm nút <b>⬆️ Lên</b> hoặc <b>⬇️ Xuống</b> để đẩy sản phẩm hiển thị trước/sau ngoài trang chủ mà không cần sửa nội dung.</p>
         <table style="width: 100%; border-collapse: collapse;">
             <thead>
                 <tr style="border-bottom: 2px solid #edf2f7; text-align: left; background: #f8f9fa;">
-                    <th style="padding: 12px;">ID</th>
-                    <th style="padding: 12px;">Tên sản phẩm</th>
-                    <th style="padding: 12px;">Danh mục</th>
-                    <th style="padding: 12px;">Giá</th>
-                    <th style="padding: 12px;">Người đăng</th>
-                    <th style="padding: 12px;">Thao tác Quản lý</th>
+                    <th style="padding: 10px; width: 110px;">Thứ tự</th>
+                    <th style="padding: 10px;">Tên sản phẩm</th>
+                    <th style="padding: 10px;">Danh mục</th>
+                    <th style="padding: 10px;">Giá</th>
+                    <th style="padding: 10px;">Người đăng</th>
+                    <th style="padding: 10px; width: 140px;">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
                 {% for p in products %}
                 <tr style="border-bottom: 1px solid #edf2f7;">
-                    <td style="padding: 12px;">#{{ p.id }}</td>
-                    <td style="padding: 12px;">
+                    <td style="padding: 10px;">
+                        <div style="display: flex; gap: 4px;">
+                            <form action="{{ url_for('move_product', product_id=p.id, direction='up') }}" method="POST" style="margin: 0;">
+                                <button type="submit" title="Đẩy lên trên" style="background: #e2e8f0; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold;">⬆️</button>
+                            </form>
+                            <form action="{{ url_for('move_product', product_id=p.id, direction='down') }}" method="POST" style="margin: 0;">
+                                <button type="submit" title="Đẩy xuống dưới" style="background: #e2e8f0; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold;">⬇️</button>
+                            </form>
+                        </div>
+                    </td>
+                    <td style="padding: 10px;">
                         <b>{{ p.name }}</b><br>
                         <small style="color: var(--text-muted);">{{ p.packaging }} | {{ p.origin }}</small>
                     </td>
-                    <td style="padding: 12px;">{{ p.group }}</td>
-                    <td style="padding: 12px; font-weight: bold; color: #d90429;">{{ "{:,.0f}".format(p.price) }} đ</td>
-                    <td style="padding: 12px;"><small>{{ p.author }}</small></td>
-                    <td style="padding: 12px;">
-                        <div style="display: flex; gap: 8px; align-items: center;">
-                            <!-- NÚT SỬA SẢN PHẨM -->
-                            <a href="{{ url_for('edit_product', product_id=p.id) }}" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                    <td style="padding: 10px;">{{ p.group_name }}</td>
+                    <td style="padding: 10px; font-weight: bold; color: #d90429;">{{ "{:,.0f}".format(p.price) }} đ</td>
+                    <td style="padding: 10px;"><small>{{ p.author }}</small></td>
+                    <td style="padding: 10px;">
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            <a href="{{ url_for('edit_product', product_id=p.id) }}" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 3px;">
                                 <i class="fa-solid fa-pen-to-square"></i> Sửa
                             </a>
-                            <!-- NÚT XÓA SẢN PHẨM -->
                             <form action="{{ url_for('delete_product', product_id=p.id) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?');" style="margin: 0;">
-                                <button type="submit" style="background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                                <button type="submit" style="background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;">
                                     <i class="fa-solid fa-trash"></i> Xóa
                                 </button>
                             </form>
@@ -230,7 +263,38 @@
         </table>
     </div>
 
-    <!-- 4. Quản lý Đơn Đặt Hàng -->
+    <!-- 5. Quản lý Bài Viết Kiến Thức -->
+    {% if user.role in ['SUPER_ADMIN', 'NHAN_VIEN'] %}
+    <div style="background: #fff; padding: 30px; border-radius: 16px; box-shadow: var(--card-shadow); margin-bottom: 30px;">
+        <h3 style="font-family: 'Playfair Display', serif; color: var(--primary-dark); font-size: 20px; margin-bottom: 20px;"><i class="fa-solid fa-book-open"></i> Danh Sách Bài Viết Cẩm Nang ({{ articles|length }})</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 2px solid #edf2f7; text-align: left; background: #f8f9fa;">
+                    <th style="padding: 10px; width: 120px;">Ngày đăng</th>
+                    <th style="padding: 10px;">Tiêu đề bài viết</th>
+                    <th style="padding: 10px;">Tác giả</th>
+                    <th style="padding: 10px; width: 100px;">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in articles %}
+                <tr style="border-bottom: 1px solid #edf2f7;">
+                    <td style="padding: 10px;"><small>{{ a.date }}</small></td>
+                    <td style="padding: 10px;"><b>{{ a.title }}</b><br><small style="color: var(--text-muted);">{{ a.snippet }}</small></td>
+                    <td style="padding: 10px;"><small>{{ a.author }}</small></td>
+                    <td style="padding: 10px;">
+                        <form action="{{ url_for('delete_article', article_id=a.id) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa bài viết này?');" style="margin: 0;">
+                            <button type="submit" style="background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer;"><i class="fa-solid fa-trash"></i> Xóa</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- 6. Quản lý Đơn Đặt Hàng -->
     <div style="background: #fff; padding: 30px; border-radius: 16px; box-shadow: var(--card-shadow); margin-bottom: 30px;">
         <h3 style="font-family: 'Playfair Display', serif; color: var(--primary-dark); font-size: 20px; margin-bottom: 20px;"><i class="fa-solid fa-receipt"></i> Danh Sách Đơn Hàng Khách Đặt</h3>
         {% if not orders %}
@@ -271,24 +335,37 @@
         {% endif %}
     </div>
 
-    <!-- 5. Form Đổi Mật Khẩu (Dành cho Admin & Người Dùng) -->
-    <div id="change-password-box" style="background: #fff; padding: 30px; border-radius: 16px; box-shadow: var(--card-shadow); max-width: 600px;">
-        <h3 style="font-family: 'Playfair Display', serif; color: var(--primary-dark); font-size: 20px; margin-bottom: 15px;"><i class="fa-solid fa-key"></i> Đổi Mật Khẩu Tài Khoản</h3>
-        <form action="{{ url_for('change_password') }}" method="POST">
-            <div style="margin-bottom: 15px;">
-                <label style="font-size: 13px; font-weight: 700;">Mật khẩu hiện tại (*):</label>
-                <input type="password" name="old_password" required placeholder="Nhập mật khẩu cũ (mặc định là 123)..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
-            </div>
-            <div style="margin-bottom: 15px;">
-                <label style="font-size: 13px; font-weight: 700;">Mật khẩu mới (*):</label>
-                <input type="password" name="new_password" required placeholder="Nhập mật khẩu mới..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
-            </div>
-            <div style="margin-bottom: 20px;">
-                <label style="font-size: 13px; font-weight: 700;">Xác nhận mật khẩu mới (*):</label>
-                <input type="password" name="confirm_password" required placeholder="Nhập lại mật khẩu mới..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
-            </div>
-            <button type="submit" class="btn-primary" style="padding: 10px 25px;"><i class="fa-solid fa-check"></i> Xác Nhận Đổi Mật Khẩu</button>
-        </form>
+    <!-- 7. Khôi phục dữ liệu từ file Backup & Đổi Mật Khẩu -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+        {% if user.role == 'SUPER_ADMIN' %}
+        <div style="background: #fff; padding: 25px; border-radius: 16px; box-shadow: var(--card-shadow);">
+            <h3 style="font-family: 'Playfair Display', serif; color: var(--primary-dark); font-size: 18px; margin-bottom: 12px;"><i class="fa-solid fa-file-import"></i> Khôi Phục Dữ Liệu Từ File JSON</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Nhập lại toàn bộ sản phẩm và bài viết từ file backup đã tải về.</p>
+            <form action="{{ url_for('import_backup') }}" method="POST" enctype="multipart/form-data">
+                <input type="file" name="backup_file" accept=".json" required style="width: 100%; margin-bottom: 15px; font-size: 13px;">
+                <button type="submit" style="background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer;"><i class="fa-solid fa-upload"></i> Nạp Dữ Liệu Backup</button>
+            </form>
+        </div>
+        {% endif %}
+
+        <div id="change-password-box" style="background: #fff; padding: 25px; border-radius: 16px; box-shadow: var(--card-shadow);">
+            <h3 style="font-family: 'Playfair Display', serif; color: var(--primary-dark); font-size: 18px; margin-bottom: 12px;"><i class="fa-solid fa-key"></i> Đổi Mật Khẩu Tài Khoản</h3>
+            <form action="{{ url_for('change_password') }}" method="POST">
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 12px; font-weight: 700;">Mật khẩu hiện tại (*):</label>
+                    <input type="password" name="old_password" required placeholder="Nhập mật khẩu cũ..." style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc;">
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 12px; font-weight: 700;">Mật khẩu mới (*):</label>
+                    <input type="password" name="new_password" required placeholder="Nhập mật khẩu mới..." style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="font-size: 12px; font-weight: 700;">Xác nhận mật khẩu mới (*):</label>
+                    <input type="password" name="confirm_password" required placeholder="Nhập lại mật khẩu mới..." style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc;">
+                </div>
+                <button type="submit" class="btn-primary" style="padding: 8px 20px; font-size: 13px;"><i class="fa-solid fa-check"></i> Đổi Mật Khẩu</button>
+            </form>
+        </div>
     </div>
 
 </div>

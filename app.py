@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, Response, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, Response
 import os
 import sqlite3
 import json
@@ -93,6 +93,13 @@ def init_db():
     )
     ''')
     
+    # Auto-migration: if articles table exists without content column, add it safely
+    try:
+        cursor.execute("ALTER TABLE articles ADD COLUMN content TEXT")
+        conn.commit()
+    except Exception:
+        pass
+        
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -258,6 +265,18 @@ def product_detail(product_id):
     all_p = get_all_products("approved")
     related = [p for p in all_p if p["group_name"] == product["group_name"] and p["id"] != product["id"]][:4]
     return render_template("detail.html", product=product, related=related, cart_count=cart_count)
+
+@app.route("/article/<int:article_id>")
+def article_detail(article_id):
+    conn = get_db()
+    row = conn.execute("SELECT * FROM articles WHERE id = ?", (article_id,)).fetchone()
+    conn.close()
+    if not row:
+        flash("Bài viết không tồn tại!", "warning")
+        return redirect(url_for("home"))
+    article = dict(row)
+    cart = session.get("cart", {})
+    return render_template("article_detail.html", article=article, cart_count=sum(cart.values()))
 
 @app.route("/add_to_cart/<int:product_id>", methods=["POST"])
 def add_to_cart(product_id):

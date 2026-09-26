@@ -1,6 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, Response
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, Response, send_file
 import os
+import sqlite3
 import json
+import base64
 from datetime import datetime
 from werkzeug.utils import secure_filename
 
@@ -11,202 +13,185 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'nongsan.db')
+BACKUP_JSON_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'nongsan_backup_data.json')
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # ---------------------------------------------------------
-# 1. TÀI KHOẢN VÀ BẢO MẬT PHÂN QUYỀN (RBAC)
+# DATABASE ENGINE (SQLITE & JSON BACKUP)
 # ---------------------------------------------------------
-USERS = {
-    "admin": {"password": "123", "role": "SUPER_ADMIN", "name": "Super Admin Ngọ Phượng", "approved": True},
-    "nhanvien": {"password": "123", "role": "NHAN_VIEN", "name": "Nhân Viên Bán Hàng", "approved": True},
-    "doitac_mocchau": {"password": "123", "role": "DOI_TAC", "name": "HTX Nông Sản Mộc Châu", "approved": True},
-    "doitac_dalat": {"password": "123", "role": "DOI_TAC", "name": "Nông Trại Xanh Đà Lạt", "approved": False}
-}
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
 
-# ---------------------------------------------------------
-# 2. DANH SÁCH SẢN PHẨM & BÀI ĐĂNG (CÓ HỖ TRỢ DUYỆT & ẢNH)
-# ---------------------------------------------------------
-PRODUCTS = [
-    {
-        "id": 1, "group": "Mật ong", "name": "Mật ong cỏ kim Cao Bằng", "price": 220000, 
-        "packaging": "Chai 500ml", "rating": 5, "origin": "Hà Giang - Cao Bằng", 
-        "ingredients": "100% mật hoa cỏ kim tự nhiên", "process": "Quay li tâm thủ công truyền thống", 
-        "usage": "Pha nước ấm uống mỗi sáng hoặc làm gia vị món ăn", "storage": "Nơi khô ráo, thoáng mát, tránh ánh nắng trực tiếp", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    },
-    {
-        "id": 2, "group": "Mật ong", "name": "Mật ong bạc hà Hà Giang", "price": 350000, 
-        "packaging": "Chai 500ml", "rating": 5, "origin": "Cao nguyên đá Đồng Văn", 
-        "ingredients": "Mật hoa bạc hà tự nhiên", "process": "Thu hoạch chính vụ đông", 
-        "usage": "Uống trực tiếp, pha trà thảo mộc", "storage": "Nhiệt độ phòng, tránh ánh nắng", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    },
-    {
-        "id": 3, "group": "Mật ong", "name": "Mật ong Sú vẹt Giao Thủy", "price": 250000, 
-        "packaging": "Chai 500ml", "rating": 5, "origin": "Vườn quốc gia Xuân Thủy", 
-        "ingredients": "Mật hoa sú vẹt rừng ngập mặn", "process": "Khai thác tự nhiên sạch", 
-        "usage": "Bồi bổ sức khỏe, tăng đề kháng", "storage": "Nơi khô ráo, thoáng mát", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    },
-    {
-        "id": 4, "group": "Mật ong", "name": "Mật ong hoa nhãn Hưng Yên", "price": 180000, 
-        "packaging": "Chai 500ml", "rating": 5, "origin": "Hưng Yên", 
-        "ingredients": "100% mật hoa nhãn thơm lừng", "process": "Quay mật chuẩn VietGAP", 
-        "usage": "Pha nước giải khát, chế biến món ăn", "storage": "Tránh nắng trực tiếp", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    },
-    {
-        "id": 5, "group": "Nghệ & Thảo dược", "name": "Tinh bột nghệ vàng Nghệ An", "price": 200000, 
-        "packaging": "Hũ 500g", "rating": 5, "origin": "Nghệ An", 
-        "ingredients": "Nghệ vàng củ tươi nguyên chất", "process": "Lọc tách xơ, dầu và tạp chất", 
-        "usage": "Uống cùng mật ong ấm trị đau dạ dày", "storage": "Đậy kín hũ sau khi dùng", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    },
-    {
-        "id": 6, "group": "Nghệ & Thảo dược", "name": "Tinh bột nghệ đen Nghệ An", "price": 220000, 
-        "packaging": "Hũ 500g", "rating": 5, "origin": "Nghệ An", 
-        "ingredients": "Nghệ đen nguyên chất 100%", "process": "Sấy lạnh công nghệ cao", 
-        "usage": "Hỗ trợ tiêu hóa, bồi bổ phụ nữ sau sinh", "storage": "Bảo quản nơi mát mẻ", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    },
-    {
-        "id": 7, "group": "Nghệ & Thảo dược", "name": "Bột sắn dây ướp hoa bưởi", "price": 160000, 
-        "packaging": "Túi zip 500g", "rating": 5, "origin": "Kinh Môn - Hải Dương", 
-        "ingredients": "Củ sắn dây ta, hoa bưởi tươi", "process": "Lọc lắng 25 lần, sấy khô tiệt trùng", 
-        "usage": "Pha uống sống hoặc nấu chín thanh nhiệt", "storage": "Bảo quản nơi khô ráo", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    },
-    {
-        "id": 8, "group": "Ngũ cốc dinh dưỡng", "name": "Ngũ cốc Lúa mạch nguyên cám", "price": 110000, 
-        "packaging": "Hũ 500g", "rating": 5, "origin": "Đồng bằng sông Hồng", 
-        "ingredients": "Lúa mạch nguyên cám giàu xơ", "process": "Rang sấy nhiệt thấp giữ nguyên vitamin", 
-        "usage": "Ăn kèm sữa chua, sữa hạt", "storage": "Đậy kín nắp hộp", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    },
-    {
-        "id": 9, "group": "Ngũ cốc dinh dưỡng", "name": "Ngũ cốc Bắp ngô sấy giòn", "price": 90000, 
-        "packaging": "Gói 500g", "rating": 5, "origin": "Mộc Châu - Sơn La", 
-        "ingredients": "Ngô ngọt tự nhiên không đường hóa học", "process": "Sấy thăng hoa giòn rụm", 
-        "usage": "Bữa sáng nhẹ, ăn vặt lành mạnh", "storage": "Nơi khô ráo", 
-        "image": "", "status": "approved", "author": "HTX Nông Sản Mộc Châu", "date": "25/09/2026"
-    },
-    {
-        "id": 10, "group": "Ngũ cốc dinh dưỡng", "name": "Ngũ cốc Lúa mỳ dinh dưỡng", "price": 105000, 
-        "packaging": "Gói 500g", "rating": 5, "origin": "Phú Thọ", 
-        "ingredients": "Lúa mỳ nguyên cám chọn lọc", "process": "Nghiền sấy tiệt trùng", 
-        "usage": "Chế độ ăn kiêng, tập gym", "storage": "Nơi thoáng mát", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    },
-    {
-        "id": 11, "group": "Ngũ cốc dinh dưỡng", "name": "Ngũ cốc Granola Siêu Hạt", "price": 175000, 
-        "packaging": "Hũ 500g", "rating": 5, "origin": "Tây Nguyên", 
-        "ingredients": "Hạt điều, óc chó, macca, hạnh nhân, yến mạch", "process": "Nướng mật ong nguyên chất", 
-        "usage": "Ăn liền cùng sữa chua, sinh tố", "storage": "Ngăn mát tủ lạnh sau mở nắp", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    },
-    {
-        "id": 12, "group": "Ngũ cốc dinh dưỡng", "name": "Hạt Macca sấy nứt vỏ Đắk Lắk", "price": 160000, 
-        "packaging": "Hũ 500g", "rating": 5, "origin": "Đắk Lắk", 
-        "ingredients": "100% hạt macca size đại VIP", "process": "Sấy nứt tự nhiên kèm dụng cụ tách", 
-        "usage": "Ăn trực tiếp 5-10 hạt mỗi ngày", "storage": "Nơi khô ráo, đậy kín", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    },
-    {
-        "id": 13, "group": "Chè & Món ngọt đặc sản", "name": "Chè bưởi thơm ngon An Giang", "price": 35000, 
-        "packaging": "Cốc 350ml", "rating": 5, "origin": "An Giang", 
-        "ingredients": "Cùi bưởi giòn sần sật, nước cốt dừa béo ngậy", "process": "Khử đắng thủ công gia truyền", 
-        "usage": "Ăn kèm đá lạnh giải khát", "storage": "Bảo quản ngăn mát 2-3 ngày", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    },
-    {
-        "id": 14, "group": "Chè & Món ngọt đặc sản", "name": "Chè bắp nước cốt dừa Hội An", "price": 30000, 
-        "packaging": "Cốc 350ml", "rating": 5, "origin": "Hội An", 
-        "ingredients": "Bắp non dẻo ngọt, cốt dừa tươi", "process": "Nấu bắp ninh dẻo sánh thơm", 
-        "usage": "Dùng tráng miệng, giải nhiệt", "storage": "Dùng trong ngày", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    },
-    {
-        "id": 15, "group": "Chè & Món ngọt đặc sản", "name": "Chè hạt sen long nhãn Phố Hiến", "price": 45000, 
-        "packaging": "Cốc 350ml", "rating": 5, "origin": "Huế - Hưng Yên", 
-        "ingredients": "Hạt sen bở tơi, long nhãn tiến vua, đường phèn", "process": "Lồng nhãn thủ công nấu mềm ngọt thanh", 
-        "usage": "An thần, thanh nhiệt, ngủ ngon", "storage": "Bảo quản ngăn mát tủ lạnh", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    },
-    {
-        "id": 16, "group": "Chè & Món ngọt đặc sản", "name": "Chè đậu xanh cốt dừa truyền thống", "price": 25000, 
-        "packaging": "Cốc 350ml", "rating": 5, "origin": "Hà Nội", 
-        "ingredients": "Đậu xanh tiêu xay vỡ, cốt dừa Bến Tre", "process": "Nấu sánh dẻo thơm ngậy", 
-        "usage": "Thanh nhiệt mùa hè", "storage": "Bảo quản mát", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    },
-    {
-        "id": 17, "group": "Chè & Món ngọt đặc sản", "name": "Chè đậu đen xanh lòng dầm đá", "price": 25000, 
-        "packaging": "Cốc 350ml", "rating": 5, "origin": "Hà Nội", 
-        "ingredients": "Đậu đen xanh lòng hảo hạng", "process": "Ninh nhừ tơi hạt, ngọt thanh", 
-        "usage": "Bổ thận, mát gan, giải độc", "storage": "Dùng ngon trong ngày", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    },
-    {
-        "id": 18, "group": "Nông sản mùa vụ & Trà", "name": "Thạch đen Cao Bằng (Sương sáo)", "price": 45000, 
-        "packaging": "Hộp 1kg", "rating": 5, "origin": "Thạch An - Cao Bằng", 
-        "ingredients": "Cây thạch đen tự nhiên vùng núi", "process": "Nấu thủ công theo công thức Tày - Nùng", 
-        "usage": "Cắt miếng ăn kèm chè, sữa tươi, sữa đậu", "storage": "Ngăn mát tủ lạnh 5-7 ngày", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    },
-    {
-        "id": 19, "group": "Nông sản mùa vụ & Trà", "name": "Trà Shan Tuyết cổ thụ Suối Giàng", "price": 250000, 
-        "packaging": "Hộp 200g", "rating": 5, "origin": "Yên Bái", 
-        "ingredients": "1 búp 1 lá chè cổ thụ trên 300 năm", "process": "Sao tay truyền thống của đồng bào Mông", 
-        "usage": "Pha nước sôi 85°C thưởng thức", "storage": "Bảo quản nơi khô ráo, tránh mùi lạ", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    },
-    {
-        "id": 20, "group": "Nông sản mùa vụ & Trà", "name": "Hồng sấy treo gió Mộc Châu", "price": 190000, 
-        "packaging": "Hộp 500g", "rating": 5, "origin": "Mộc Châu", 
-        "ingredients": "Hồng trứng tuyển chọn vỏ mỏng", "process": "Treo gió tự nhiên theo công nghệ Nhật Bản", 
-        "usage": "Ăn trực tiếp thưởng thức mật hồng dẻo", "storage": "Bảo quản tủ mát", 
-        "image": "", "status": "approved", "author": "HTX Nông Sản Mộc Châu", "date": "25/09/2026"
-    },
-    {
-        "id": 21, "group": "Nông sản mùa vụ & Trà", "name": "Tỏi cô đơn Lý Sơn chính hiệu", "price": 280000, 
-        "packaging": "Túi 500g", "rating": 5, "origin": "Đảo Lý Sơn - Quảng Ngãi", 
-        "ingredients": "100% tỏi một nhánh đất núi lửa Lý Sơn", "process": "Phơi khô tự nhiên dưới nắng biển", 
-        "usage": "Làm gia vị, ngâm mật ong/rượu chữa bệnh", "storage": "Treo nơi thoáng mát", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    },
-    {
-        "id": 22, "group": "Nông sản mùa vụ & Trà", "name": "Miến dong Phia Đén Cao Bằng", "price": 65000, 
-        "packaging": "Gói 500g", "rating": 5, "origin": "Nguyên Bình - Cao Bằng", 
-        "ingredients": "100% củ dong riềng đỏ vùng núi cao", "process": "Làm thủ công không tẩy hóa chất, sợi dai dòn", 
-        "usage": "Nấu canh măng, lẩu, xào lòng mề", "storage": "Để nơi khô ráo", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    },
-    {
-        "id": 23, "group": "Nông sản mùa vụ & Trà", "name": "Măng nứa khô Tây Bắc sạch", "price": 170000, 
-        "packaging": "Túi 500g", "rating": 5, "origin": "Điện Biên", 
-        "ingredients": "Măng nứa tép non phơi nắng", "process": "Thu hái rừng tự nhiên, sấy nắng sạch", 
-        "usage": "Ngâm mềm nấu canh sườn, gà, vịt", "storage": "Buộc kín miệng túi", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    },
-    {
-        "id": 24, "group": "Nông sản mùa vụ & Trà", "name": "Gạo Séng Cù Mường Lò dẻo thơm", "price": 185000, 
-        "packaging": "Túi 5kg", "rating": 5, "origin": "Mường Lò - Nghĩa Lộ", 
-        "ingredients": "Lúa Séng Cù trồng ruộng bậc thang", "process": "Xát mộc giữ trọn lớp cám dưỡng chất", 
-        "usage": "Nấu cơm dẻo ngọt đậm đà", "storage": "Thùng đậy kín chống ẩm", 
-        "image": "", "status": "approved", "author": "Ngọ Phượng Store", "date": "25/09/2026"
-    }
-]
+def init_db():
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        username TEXT PRIMARY KEY,
+        password TEXT,
+        role TEXT,
+        name TEXT,
+        approved INTEGER
+    )
+    ''')
+    
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        group_name TEXT,
+        name TEXT,
+        price INTEGER,
+        packaging TEXT,
+        rating INTEGER,
+        origin TEXT,
+        ingredients TEXT,
+        process TEXT,
+        usage TEXT,
+        storage TEXT,
+        image TEXT,
+        status TEXT,
+        author TEXT,
+        date TEXT
+    )
+    ''')
+    
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS articles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT,
+        title TEXT,
+        snippet TEXT,
+        author TEXT
+    )
+    ''')
+    
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT,
+        customer TEXT,
+        phone TEXT,
+        address TEXT,
+        payment TEXT,
+        note TEXT,
+        items TEXT,
+        total INTEGER,
+        status TEXT
+    )
+    ''')
+    
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT,
+        name TEXT,
+        phone TEXT,
+        content TEXT,
+        reply TEXT,
+        hotline TEXT
+    )
+    ''')
+    
+    conn.commit()
+    
+    # Check if default data exists
+    cursor.execute("SELECT COUNT(*) FROM users")
+    if cursor.fetchone()[0] == 0:
+        cursor.execute("INSERT INTO users VALUES ('admin', '123', 'SUPER_ADMIN', 'Super Admin Ngọ Phượng', 1)")
+        cursor.execute("INSERT INTO users VALUES ('nhanvien', '123', 'NHAN_VIEN', 'Nhân Viên Bán Hàng', 1)")
+        cursor.execute("INSERT INTO users VALUES ('doitac_mocchau', '123', 'DOI_TAC', 'HTX Nông Sản Mộc Châu', 1)")
+        cursor.execute("INSERT INTO users VALUES ('doitac_dalat', '123', 'DOI_TAC', 'Nông Trại Xanh Đà Lạt', 0)")
+        conn.commit()
+        
+    cursor.execute("SELECT COUNT(*) FROM products")
+    if cursor.fetchone()[0] == 0:
+        default_products = [
+            ("Mật ong", "Mật ong cỏ kim Cao Bằng", 220000, "Chai 500ml", 5, "Hà Giang - Cao Bằng", "100% mật hoa cỏ kim tự nhiên", "Quay li tâm thủ công truyền thống", "Pha nước ấm uống mỗi sáng hoặc làm gia vị món ăn", "Nơi khô ráo, thoáng mát, tránh ánh nắng trực tiếp", "", "approved", "Ngọ Phượng Store", "26/09/2026"),
+            ("Mật ong", "Mật ong bạc hà Hà Giang", 350000, "Chai 500ml", 5, "Cao nguyên đá Đồng Văn", "Mật hoa bạc hà tự nhiên", "Thu hoạch chính vụ đông", "Uống trực tiếp, pha trà thảo mộc", "Nhiệt độ phòng, tránh ánh nắng", "", "approved", "Ngọ Phượng Store", "26/09/2026"),
+            ("Mật ong", "Mật ong Sú vẹt Giao Thủy", 250000, "Chai 500ml", 5, "Vườn quốc gia Xuân Thủy", "Mật hoa sú vẹt rừng ngập mặn", "Khai thác tự nhiên sạch", "Bồi bổ sức khỏe, tăng đề kháng", "Nơi khô ráo, thoáng mát", "", "approved", "Ngọ Phượng Store", "26/09/2026"),
+            ("Mật ong", "Mật ong hoa nhãn Hưng Yên", 180000, "Chai 500ml", 5, "Hưng Yên", "100% mật hoa nhãn thơm lừng", "Quay mật chuẩn VietGAP", "Pha nước giải khát, chế biến món ăn", "Tránh nắng trực tiếp", "", "approved", "Ngọ Phượng Store", "26/09/2026"),
+            ("Nghệ & Thảo dược", "Tinh bột nghệ vàng Nghệ An", 200000, "Hũ 500g", 5, "Nghệ An", "Nghệ vàng củ tươi nguyên chất", "Lọc tách xơ, dầu và tạp chất", "Uống cùng mật ong ấm trị đau dạ dày", "Đậy kín hũ sau khi dùng", "", "approved", "Ngọ Phượng Store", "26/09/2026"),
+            ("Nghệ & Thảo dược", "Tinh bột nghệ đen Nghệ An", 220000, "Hũ 500g", 5, "Nghệ An", "Nghệ đen nguyên chất 100%", "Sấy lạnh công nghệ cao", "Hỗ trợ tiêu hóa, bồi bổ phụ nữ sau sinh", "Bảo quản nơi mát mẻ", "", "approved", "Ngọ Phượng Store", "26/09/2026"),
+            ("Nghệ & Thảo dược", "Bột sắn dây ướp hoa bưởi", 160000, "Túi zip 500g", 5, "Kinh Môn - Hải Dương", "Củ sắn dây ta, hoa bưởi tươi", "Lọc lắng 25 lần, sấy khô tiệt trùng", "Pha uống sống hoặc nấu chín thanh nhiệt", "Bảo quản nơi khô ráo", "", "approved", "Ngọ Phượng Store", "26/09/2026"),
+            ("Ngũ cốc dinh dưỡng", "Ngũ cốc Lúa mạch nguyên cám", 110000, "Hũ 500g", 5, "Đồng bằng sông Hồng", "Lúa mạch nguyên cám giàu xơ", "Rang sấy nhiệt thấp giữ nguyên vitamin", "Ăn kèm sữa chua, sữa hạt", "Đậy kín nắp hộp", "", "approved", "Ngọ Phượng Store", "26/09/2026"),
+            ("Ngũ cốc dinh dưỡng", "Ngũ cốc Bắp ngô sấy giòn", 90000, "Gói 500g", 5, "Mộc Châu - Sơn La", "Ngô ngọt tự nhiên không đường hóa học", "Sấy thăng hoa giòn rụm", "Bữa sáng nhẹ, ăn vặt lành mạnh", "Nơi khô ráo", "", "approved", "HTX Nông Sản Mộc Châu", "26/09/2026"),
+            ("Ngũ cốc dinh dưỡng", "Ngũ cốc Lúa mỳ dinh dưỡng", 105000, "Gói 500g", 5, "Phú Thọ", "Lúa mỳ nguyên cám chọn lọc", "Nghiền sấy tiệt trùng", "Chế độ ăn kiêng, tập gym", "Nơi thoáng mát", "", "approved", "Ngọ Phượng Store", "26/09/2026"),
+            ("Ngũ cốc dinh dưỡng", "Ngũ cốc Granola Siêu Hạt", 175000, "Hũ 500g", 5, "Tây Nguyên", "Hạt điều, óc chó, macca, hạnh nhân, yến mạch", "Nướng mật ong nguyên chất", "Ăn liền cùng sữa chua, sinh tố", "Ngăn mát tủ lạnh sau mở nắp", "", "approved", "Ngọ Phượng Store", "26/09/2026"),
+            ("Ngũ cốc dinh dưỡng", "Hạt Macca sấy nứt vỏ Đắk Lắk", 160000, "Hũ 500g", 5, "Đắk Lắk", "100% hạt macca size đại VIP", "Sấy nứt tự nhiên kèm dụng cụ tách", "Ăn trực tiếp 5-10 hạt mỗi ngày", "Nơi khô ráo, đậy kín", "", "approved", "Ngọ Phượng Store", "26/09/2026"),
+            ("Chè & Món ngọt đặc sản", "Chè bưởi thơm ngon An Giang", 35000, "Cốc 350ml", 5, "An Giang", "Cùi bưởi giòn sần sật, nước cốt dừa béo ngậy", "Khử đắng thủ công gia truyền", "Ăn kèm đá lạnh giải khát", "Bảo quản ngăn mát 2-3 ngày", "", "approved", "Ngọ Phượng Store", "26/09/2026"),
+            ("Chè & Món ngọt đặc sản", "Chè bắp nước cốt dừa Hội An", 30000, "Cốc 350ml", 5, "Hội An", "Bắp non dẻo ngọt, cốt dừa tươi", "Nấu bắp ninh dẻo sánh thơm", "Dùng tráng miệng, giải nhiệt", "Dùng trong ngày", "", "approved", "Ngọ Phượng Store", "26/09/2026"),
+            ("Chè & Món ngọt đặc sản", "Chè hạt sen long nhãn Phố Hiến", 45000, "Cốc 350ml", 5, "Huế - Hưng Yên", "Hạt sen bở tơi, long nhãn tiến vua, đường phèn", "Lồng nhãn thủ công nấu mềm ngọt thanh", "An thần, thanh nhiệt, ngủ ngon", "Bảo quản ngăn mát tủ lạnh", "", "approved", "Ngọ Phượng Store", "26/09/2026"),
+            ("Chè & Món ngọt đặc sản", "Chè đậu xanh cốt dừa truyền thống", 25000, "Cốc 350ml", 5, "Hà Nội", "Đậu xanh tiêu xay vỡ, cốt dừa Bến Tre", "Nấu sánh dẻo thơm ngậy", "Thanh nhiệt mùa hè", "Bảo quản mát", "", "approved", "Ngọ Phượng Store", "26/09/2026"),
+            ("Chè & Món ngọt đặc sản", "Chè đậu đen xanh lòng dầm đá", 25000, "Cốc 350ml", 5, "Hà Nội", "Đậu đen xanh lòng hảo hạng", "Ninh nhừ tơi hạt, ngọt thanh", "Bổ thận, mát gan, giải độc", "Dùng ngon trong ngày", "", "approved", "Ngọ Phượng Store", "26/09/2026"),
+            ("Nông sản mùa vụ & Trà", "Thạch đen Cao Bằng (Sương sáo)", 45000, "Hộp 1kg", 5, "Thạch An - Cao Bằng", "Cây thạch đen tự nhiên vùng núi", "Nấu thủ công theo công thức Tày - Nùng", "Cắt miếng ăn kèm chè, sữa tươi, sữa đậu", "Ngăn mát tủ lạnh 5-7 ngày", "", "approved", "Ngọ Phượng Store", "26/09/2026"),
+            ("Nông sản mùa vụ & Trà", "Trà Shan Tuyết cổ thụ Suối Giàng", 250000, "Hộp 200g", 5, "Yên Bái", "1 búp 1 lá chè cổ thụ trên 300 năm", "Sao tay truyền thống của đồng bào Mông", "Pha nước sôi 85°C thưởng thức", "Bảo quản nơi khô ráo, tránh mùi lạ", "", "approved", "Ngọ Phượng Store", "26/09/2026"),
+            ("Nông sản mùa vụ & Trà", "Hồng sấy treo gió Mộc Châu", 190000, "Hộp 500g", 5, "Mộc Châu", "Hồng trứng tuyển chọn vỏ mỏng", "Treo gió tự nhiên theo công nghệ Nhật Bản", "Ăn trực tiếp thưởng thức mật hồng dẻo", "Bảo quản tủ mát", "", "approved", "HTX Nông Sản Mộc Châu", "26/09/2026"),
+            ("Nông sản mùa vụ & Trà", "Tỏi cô đơn Lý Sơn chính hiệu", 280000, "Túi 500g", 5, "Đảo Lý Sơn - Quảng Ngãi", "100% tỏi một nhánh đất núi lửa Lý Sơn", "Phơi khô tự nhiên dưới nắng biển", "Làm gia vị, ngâm mật ong/rượu chữa bệnh", "Treo nơi thoáng mát", "", "approved", "Ngọ Phượng Store", "26/09/2026"),
+            ("Nông sản mùa vụ & Trà", "Miến dong Phia Đén Cao Bằng", 65000, "Gói 500g", 5, "Nguyên Bình - Cao Bằng", "100% củ dong riềng đỏ vùng núi cao", "Làm thủ công không tẩy hóa chất, sợi dai dòn", "Nấu canh măng, lẩu, xào lòng mề", "Để nơi khô ráo", "", "approved", "Ngọ Phượng Store", "26/09/2026"),
+            ("Nông sản mùa vụ & Trà", "Măng nứa khô Tây Bắc sạch", 170000, "Túi 500g", 5, "Điện Biên", "Măng nứa tép non phơi nắng", "Thu hái rừng tự nhiên, sấy nắng sạch", "Ngâm mềm nấu canh sườn, gà, vịt", "Buộc kín miệng túi", "", "approved", "Ngọ Phượng Store", "26/09/2026"),
+            ("Nông sản mùa vụ & Trà", "Gạo Séng Cù Mường Lò dẻo thơm", 185000, "Túi 5kg", 5, "Mường Lò - Nghĩa Lộ", "Lúa Séng Cù trồng ruộng bậc thang", "Xát mộc giữ trọn lớp cám dưỡng chất", "Nấu cơm dẻo ngọt đậm đà", "Thùng đậy kín chống ẩm", "", "approved", "Ngọ Phượng Store", "26/09/2026")
+        ]
+        cursor.executemany('''
+        INSERT INTO products (group_name, name, price, packaging, rating, origin, ingredients, process, usage, storage, image, status, author, date)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', default_products)
+        conn.commit()
+        
+    cursor.execute("SELECT COUNT(*) FROM articles")
+    if cursor.fetchone()[0] == 0:
+        default_articles = [
+            ("26/09/2026", "Bí quyết chọn Mật ong hoa rừng chuẩn vị mùa vụ mới", "Mật ong tự nhiên đặm đà, thơm dịu và cách phân biệt mật ong nguyên chất với mật pha đường...", "Super Admin"),
+            ("25/09/2026", "Công dụng tuyệt vời của Tinh bột nghệ vàng kết hợp mật ong", "Uống tinh bột nghệ kết hợp mật ong mỗi sáng giúp bảo vệ niêm mạc dạ dày và dưỡng da trắng mịn...", "Super Admin"),
+            ("24/09/2026", "Ngũ cốc Granola siêu hạt - Bữa sáng nhanh gọn tràn đầy năng lượng", "Sự kết hợp hoàn hảo giữa hạt điều, hạnh nhân, óc chó và yến mạch cho người bận rộn...", "Super Admin"),
+            ("23/09/2026", "Hành trình mang đặc sản vùng cao Tây Bắc về với bàn ăn phố thị", "Những sản phẩm OCOP đạt chuẩn hữu cơ từ các hợp tác xã vùng cao được kiểm định nghiêm ngặt...", "Super Admin")
+        ]
+        cursor.executemany('''
+        INSERT INTO articles (date, title, snippet, author) VALUES (?, ?, ?, ?)
+        ''', default_articles)
+        conn.commit()
 
-ARTICLES = [
-    {"id": 1, "date": "25/09/2026", "title": "Bí quyết chọn Mật ong hoa rừng chuẩn vị mùa vụ mới", "snippet": "Mật ong tự nhiên đặm đà, thơm dịu và cách phân biệt mật ong nguyên chất với mật pha đường...", "author": "Super Admin"},
-    {"id": 2, "date": "24/09/2026", "title": "Công dụng tuyệt vời của Tinh bột nghệ vàng kết hợp mật ong", "snippet": "Uống tinh bột nghệ kết hợp mật ong mỗi sáng giúp bảo vệ niêm mạc dạ dày và dưỡng da trắng mịn...", "author": "Super Admin"},
-    {"id": 3, "date": "23/09/2026", "title": "Ngũ cốc Granola siêu hạt - Bữa sáng nhanh gọn tràn đầy năng lượng", "snippet": "Sự kết hợp hoàn hảo giữa hạt điều, hạnh nhân, óc chó và yến mạch cho người bận rộn...", "author": "Super Admin"},
-    {"id": 4, "date": "22/09/2026", "title": "Hành trình mang đặc sản vùng cao Tây Bắc về với bàn ăn phố thị", "snippet": "Những sản phẩm OCOP đạt chuẩn hữu cơ từ các hợp tác xã vùng cao được kiểm định nghiêm ngặt...", "author": "Super Admin"}
-]
+    conn.close()
 
-ORDERS = []
-MESSAGES = []
+init_db()
+
+def get_all_products(status="approved"):
+    conn = get_db()
+    if status == "all":
+        rows = conn.execute("SELECT * FROM products ORDER BY id DESC").fetchall()
+    else:
+        rows = conn.execute("SELECT * FROM products WHERE status = ? ORDER BY id DESC", (status,)).fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+def get_product_by_id(p_id):
+    conn = get_db()
+    row = conn.execute("SELECT * FROM products WHERE id = ?", (p_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+def get_all_articles():
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM articles ORDER BY id DESC").fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+def get_all_orders():
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM orders ORDER BY id DESC").fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+def get_all_users():
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM users").fetchall()
+    conn.close()
+    return {row["username"]: dict(row) for row in rows}
 
 # ---------------------------------------------------------
 # SEO: SITEMAP.XML & ROBOTS.TXT
@@ -214,12 +199,12 @@ MESSAGES = []
 @app.route("/sitemap.xml")
 def sitemap():
     base_url = "https://nongsan.top"
-    approved_products = [p for p in PRODUCTS if p.get("status", "approved") == "approved"]
+    products = get_all_products("approved")
     
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     xml += f'  <url><loc>{base_url}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>\n'
-    for p in approved_products:
+    for p in products:
         xml += f'  <url><loc>{base_url}/product/{p["id"]}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>\n'
     xml += '</urlset>'
     return Response(xml, mimetype='application/xml')
@@ -230,7 +215,7 @@ def robots():
     return Response(content, mimetype='text/plain')
 
 # ---------------------------------------------------------
-# 3. SHOPPING ROUTES
+# SHOPPING ROUTES
 # ---------------------------------------------------------
 @app.route("/")
 def home():
@@ -238,25 +223,27 @@ def home():
     cart_count = sum(cart.values())
     selected_group = request.args.get("group")
     
-    approved_products = [p for p in PRODUCTS if p.get("status", "approved") == "approved"]
+    approved_products = get_all_products("approved")
+    articles = get_all_articles()
     
     if selected_group and selected_group != "all":
-        display_products = [p for p in approved_products if p["group"] == selected_group]
+        display_products = [p for p in approved_products if p["group_name"] == selected_group]
     else:
         display_products = approved_products
         
-    groups = sorted(list(set(p["group"] for p in approved_products)))
-    return render_template("index.html", products=display_products, articles=ARTICLES, cart_count=cart_count, groups=groups, selected_group=selected_group)
+    groups = sorted(list(set(p["group_name"] for p in approved_products)))
+    return render_template("index.html", products=display_products, articles=articles, cart_count=cart_count, groups=groups, selected_group=selected_group)
 
 @app.route("/product/<int:product_id>")
 def product_detail(product_id):
-    product = next((p for p in PRODUCTS if p["id"] == product_id and p.get("status", "approved") == "approved"), None)
-    if not product:
+    product = get_product_by_id(product_id)
+    if not product or product.get("status") != "approved":
         flash("Sản phẩm không tồn tại hoặc đang chờ kiểm duyệt!", "warning")
         return redirect(url_for("home"))
     cart = session.get("cart", {})
     cart_count = sum(cart.values())
-    related = [p for p in PRODUCTS if p["group"] == product["group"] and p["id"] != product["id"] and p.get("status", "approved") == "approved"][:4]
+    all_p = get_all_products("approved")
+    related = [p for p in all_p if p["group_name"] == product["group_name"] and p["id"] != product["id"]][:4]
     return render_template("detail.html", product=product, related=related, cart_count=cart_count)
 
 @app.route("/add_to_cart/<int:product_id>", methods=["POST"])
@@ -265,7 +252,7 @@ def add_to_cart(product_id):
     cart = session.get("cart", {})
     cart[str(product_id)] = cart.get(str(product_id), 0) + qty
     session["cart"] = cart
-    flash(f"Đã thêm sản phẩm vào giỏ hàng thành công!")
+    flash("Đã thêm sản phẩm vào giỏ hàng thành công!")
     return redirect(request.referrer or url_for("home"))
 
 @app.route("/update-cart", methods=["POST"])
@@ -287,7 +274,7 @@ def view_cart():
     cart_items = []
     total = 0
     for p_id, qty in cart.items():
-        product = next((p for p in PRODUCTS if p["id"] == int(p_id)), None)
+        product = get_product_by_id(int(p_id))
         if product:
             subtotal = product["price"] * qty
             total += subtotal
@@ -310,25 +297,29 @@ def checkout():
     order_items = []
     total = 0
     for p_id, qty in cart.items():
-        product = next((p for p in PRODUCTS if p["id"] == int(p_id)), None)
+        product = get_product_by_id(int(p_id))
         if product:
             subtotal = product["price"] * qty
             total += subtotal
             order_items.append({"id": product["id"], "name": product["name"], "qty": qty, "price": product["price"]})
 
+    conn = get_db()
+    conn.execute('''
+    INSERT INTO orders (date, customer, phone, address, payment, note, items, total, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (datetime.now().strftime("%d/%m/%Y %H:%M"), name, phone, address, payment, note, json.dumps(order_items, ensure_ascii=False), total, "Mới đặt"))
+    conn.commit()
+    conn.close()
+
     order = {
-        "id": len(ORDERS) + 1,
+        "id": "DH" + datetime.now().strftime("%H%M%S"),
         "date": datetime.now().strftime("%d/%m/%Y %H:%M"),
         "customer": name,
         "phone": phone,
         "address": address,
         "payment": payment,
-        "note": note,
-        "items": order_items,
-        "total": total,
-        "status": "Mới đặt"
+        "total": total
     }
-    ORDERS.append(order)
     session["cart"] = {}
     return render_template("order_success.html", order=order)
 
@@ -337,20 +328,20 @@ def contact():
     name = request.form.get("name")
     phone = request.form.get("phone")
     content = request.form.get("content")
-    MESSAGES.append({
-        "id": len(MESSAGES) + 1,
-        "date": datetime.now().strftime("%d/%m/%Y %H:%M"),
-        "name": name,
-        "phone": phone,
-        "content": content,
-        "reply": "",
-        "hotline": "0863875156, 0855512165"
-    })
+    
+    conn = get_db()
+    conn.execute('''
+    INSERT INTO messages (date, name, phone, content, reply, hotline)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ''', (datetime.now().strftime("%d/%m/%Y %H:%M"), name, phone, content, "", "0383875156, 0855512165"))
+    conn.commit()
+    conn.close()
+    
     flash("Cảm ơn bạn! Yêu cầu tư vấn đã được gửi đến Hotline/Zalo Nông Sản Ngọ Phượng.")
     return redirect(url_for("home"))
 
 # ---------------------------------------------------------
-# 4. CHATBOT AI TRẢ LỜI TỰ ĐỘNG
+# CHATBOT AI TRẢ LỜI TỰ ĐỘNG
 # ---------------------------------------------------------
 @app.route("/api/ai-chat", methods=["POST"])
 def ai_chat():
@@ -361,7 +352,7 @@ def ai_chat():
         return jsonify({"reply": "Xin chào! Em là Trợ lý AI Nông Sản Ngọ Phượng 🌾. Anh/chị cần tư vấn về mật ong rừng, tinh bột nghệ, ngũ cốc hay các loại chè đặc sản ạ?"})
     
     if "mật ong" in user_msg or "mat ong" in user_msg:
-        reply = "🍯 Nông Sản Ngọ Phượng hiện có: Mật ong cỏ kim Cao Bằng (220k/chai 500ml), Mật ong bạc hà Đồng Văn (350k/chai), Mật ong hoa nhãn Hưng Yên (180k/chai). Tất cả đều quay mật thủ công 100% tự nhiên không pha đường. Anh/chị có thể để lại SĐT hoặc nhắn Zalo 0863875156 để đặt hàng ạ!"
+        reply = "🍯 Nông Sản Ngọ Phượng hiện có: Mật ong cỏ kim Cao Bằng (220k/chai 500ml), Mật ong bạc hà Đồng Văn (350k/chai), Mật ong hoa nhãn Hưng Yên (180k/chai). Tất cả đều quay mật thủ công 100% tự nhiên không pha đường. Anh/chị có thể để lại SĐT hoặc nhắn Zalo 0383875156 để đặt hàng ạ!"
     elif "nghệ" in user_msg or "tinh bột nghệ" in user_msg:
         reply = "🌿 Tinh bột nghệ vàng Nghệ An nguyên chất bên em có giá 200k/hũ 500g, đã lọc sạch dầu và xơ, rất tốt cho người đau dạ dày hoặc làm đẹp da. Anh/chị pha với mật ong nước ấm uống mỗi sáng cực kỳ tốt ạ!"
     elif "ngũ cốc" in user_msg or "granola" in user_msg or "macca" in user_msg:
@@ -369,16 +360,16 @@ def ai_chat():
     elif "chè" in user_msg or "thạch" in user_msg:
         reply = "🥣 Bên em có Chè bưởi An Giang giòn sần sật (35k/cốc), Chè bắp Hội An (30k), Chè hạt sen long nhãn Phố Hiến (45k) và Thạch đen Cao Bằng (45k/hộp 1kg). Giao tận nơi đóng gói bảo quản mát thơm ngon!"
     elif "zalo" in user_msg or "sđt" in user_msg or "hotline" in user_msg or "liên hệ" in user_msg or "tư vấn" in user_msg:
-        reply = "📞 Hotline / Zalo trực tiếp hỗ trợ 24/7 của bên em: 0863875156 hoặc 0855512165. Anh/chị có thể bấm nút Zalo ngay bên dưới để nhắn tin trực tiếp nhé!"
+        reply = "📞 Hotline / Zalo trực tiếp hỗ trợ 24/7 của bên em: 0383875156 hoặc 0855512165. Anh/chị có thể bấm nút Zalo ngay bên dưới để nhắn tin trực tiếp nhé!"
     elif "giá" in user_msg or "bao nhiêu" in user_msg:
         reply = "💰 Giá các sản phẩm được niêm yết công khai rõ ràng trên website. Mật ong từ 180k - 350k, Tinh bột nghệ từ 200k, Ngũ cốc từ 90k - 175k, Chè đặc sản từ 25k - 45k. Miễn phí giao hàng cho đơn từ 500k ạ!"
     else:
-        reply = f"🌾 Cảm ơn anh/chị đã quan tâm! Về câu hỏi '{user_msg}', em đã ghi nhận. Anh/chị có thể xem chi tiết danh mục sản phẩm trên web hoặc nhắn trực tiếp qua Zalo 0863875156 / 0855512165 để chuyên viên Ngọ Phượng tư vấn kỹ hơn nhé!"
+        reply = f"🌾 Cảm ơn anh/chị đã quan tâm! Về câu hỏi '{user_msg}', em đã ghi nhận. Anh/chị có thể xem chi tiết danh mục sản phẩm trên web hoặc nhắn trực tiếp qua Zalo 0383875156 / 0855512165 để chuyên viên Ngọ Phượng tư vấn kỹ hơn nhé!"
         
     return jsonify({"reply": reply})
 
 # ---------------------------------------------------------
-# 5. CỔNG ĐĂNG NHẬP & ĐỔI MẬT KHẨU
+# AUTHENTICATION & ADMIN
 # ---------------------------------------------------------
 @app.route("/portal", methods=["GET", "POST"])
 @app.route("/login", methods=["GET", "POST"])
@@ -387,22 +378,23 @@ def login():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
         
-        user = USERS.get(username)
+        users = get_all_users()
+        user = users.get(username)
         valid_pass = False
         if user:
             if password in [user.get("password"), "123", "123456", "Admin@123", "admin123", "NgoPhuong@2026"]:
                 valid_pass = True
                 
         if user and valid_pass:
-            if user["role"] == "DOI_TAC" and not user.get("approved", False):
-                flash("⚠️ Tài khoản Đối tác của bạn đang CHỜ ADMIN PHÊ DUYỆT. Vui lòng liên hệ Admin qua Zalo 0863875156 để được kích hoạt quyền đăng bài!", "warning")
+            if user["role"] == "DOI_TAC" and not user.get("approved"):
+                flash("⚠️ Tài khoản Đối tác của bạn đang CHỜ ADMIN PHÊ DUYỆT. Vui lòng liên hệ Admin qua Zalo 0383875156 để được kích hoạt quyền đăng bài!", "warning")
                 return render_template("login.html")
                 
             session["user"] = {
                 "username": username,
                 "role": user["role"],
                 "name": user["name"],
-                "approved": user.get("approved", False)
+                "approved": bool(user.get("approved"))
             }
             flash(f"Xin chào {user['name']}! Đăng nhập thành công.", "success")
             return redirect(url_for("admin_dashboard"))
@@ -421,16 +413,16 @@ def register_partner():
         flash("Vui lòng điền đầy đủ tài khoản và mật khẩu!", "warning")
         return redirect(url_for("login"))
         
-    if partner_user in USERS:
+    users = get_all_users()
+    if partner_user in users:
         flash("⚠️ Tên tài khoản này đã tồn tại trên hệ thống!", "warning")
         return redirect(url_for("login"))
         
-    USERS[partner_user] = {
-        "password": partner_pass,
-        "role": "DOI_TAC",
-        "name": f"{partner_name} (SĐT: {partner_phone})",
-        "approved": False
-    }
+    conn = get_db()
+    conn.execute("INSERT INTO users VALUES (?, ?, ?, ?, ?)", (partner_user, partner_pass, "DOI_TAC", f"{partner_name} (SĐT: {partner_phone})", 0))
+    conn.commit()
+    conn.close()
+    
     flash("🎉 Đăng ký tài khoản Đối tác thành công! Vui lòng chờ Admin phê duyệt để bắt đầu đăng sản phẩm.", "success")
     return redirect(url_for("login"))
 
@@ -444,7 +436,8 @@ def change_password():
     new_pass = request.form.get("new_password", "").strip()
     confirm_pass = request.form.get("confirm_password", "").strip()
     
-    current_stored = USERS.get(user["username"], {}).get("password", "123")
+    users = get_all_users()
+    current_stored = users.get(user["username"], {}).get("password", "123")
     
     if old_pass not in [current_stored, "123", "123456", "Admin@123"]:
         flash("❌ Mật khẩu cũ không chính xác!", "danger")
@@ -458,7 +451,11 @@ def change_password():
         flash("❌ Mật khẩu xác nhận không khớp!", "warning")
         return redirect(url_for("admin_dashboard"))
         
-    USERS[user["username"]]["password"] = new_pass
+    conn = get_db()
+    conn.execute("UPDATE users SET password = ? WHERE username = ?", (new_pass, user["username"]))
+    conn.commit()
+    conn.close()
+    
     flash("✅ Đổi mật khẩu thành công! Hãy ghi nhớ mật khẩu mới của bạn.", "success")
     return redirect(url_for("admin_dashboard"))
 
@@ -469,7 +466,7 @@ def logout():
     return redirect(url_for("home"))
 
 # ---------------------------------------------------------
-# 6. ADMIN DASHBOARD: QUẢN LÝ, SỬA, XÓA SẢN PHẨM & BÀI ĐĂNG
+# ADMIN DASHBOARD & CRUD
 # ---------------------------------------------------------
 @app.route("/admin")
 def admin_dashboard():
@@ -479,21 +476,22 @@ def admin_dashboard():
         
     is_admin = user["role"] in ["SUPER_ADMIN", "NHAN_VIEN"]
     
+    all_products = get_all_products("all")
     if is_admin:
-        display_products = PRODUCTS
-        pending_products = [p for p in PRODUCTS if p.get("status") == "pending"]
+        display_products = all_products
+        pending_products = [p for p in all_products if p.get("status") == "pending"]
     else:
-        display_products = [p for p in PRODUCTS if p.get("author") == user["name"]]
+        display_products = [p for p in all_products if p.get("author") == user["name"]]
         pending_products = []
         
     return render_template(
         "admin.html", 
         products=display_products,
         pending_products=pending_products,
-        articles=ARTICLES,
-        orders=ORDERS, 
-        messages=MESSAGES, 
-        users=USERS,
+        articles=get_all_articles(),
+        orders=get_all_orders(), 
+        messages=[], 
+        users=get_all_users(),
         user=user
     )
 
@@ -501,22 +499,26 @@ def admin_dashboard():
 def approve_partner(username):
     user = session.get("user")
     if not user or user["role"] != "SUPER_ADMIN":
-        return "Bạn không có quyền thực hiện chức năng này!", 403
+        return "Bạn không có quyền!", 403
         
-    if username in USERS:
-        USERS[username]["approved"] = True
-        flash(f"✅ Đã phê duyệt cấp quyền đăng bài thành công cho đối tác: {USERS[username]['name']}")
+    conn = get_db()
+    conn.execute("UPDATE users SET approved = 1 WHERE username = ?", (username,))
+    conn.commit()
+    conn.close()
+    flash(f"✅ Đã phê duyệt cấp quyền đăng bài thành công cho đối tác: {username}")
     return redirect(url_for("admin_dashboard"))
 
 @app.route("/admin/revoke-partner/<username>", methods=["POST"])
 def revoke_partner(username):
     user = session.get("user")
     if not user or user["role"] != "SUPER_ADMIN":
-        return "Bạn không có quyền thực hiện chức năng này!", 403
+        return "Bạn không có quyền!", 403
         
-    if username in USERS:
-        USERS[username]["approved"] = False
-        flash(f"🔒 Đã tạm dừng quyền đăng bài của đối tác: {USERS[username]['name']}")
+    conn = get_db()
+    conn.execute("UPDATE users SET approved = 0 WHERE username = ?", (username,))
+    conn.commit()
+    conn.close()
+    flash(f"🔒 Đã tạm dừng quyền đăng bài của đối tác: {username}")
     return redirect(url_for("admin_dashboard"))
 
 @app.route("/admin/approve-product/<int:product_id>", methods=["POST"])
@@ -525,11 +527,11 @@ def approve_product(product_id):
     if not user or user["role"] not in ["SUPER_ADMIN", "NHAN_VIEN"]:
         return "Bạn không có quyền!", 403
         
-    for p in PRODUCTS:
-        if p["id"] == product_id:
-            p["status"] = "approved"
-            flash(f"✅ Đã duyệt và xuất bản sản phẩm: {p['name']} lên trang chủ!")
-            break
+    conn = get_db()
+    conn.execute("UPDATE products SET status = 'approved' WHERE id = ?", (product_id,))
+    conn.commit()
+    conn.close()
+    flash("✅ Đã duyệt và xuất bản sản phẩm lên trang chủ!")
     return redirect(url_for("admin_dashboard"))
 
 @app.route("/admin/reject-product/<int:product_id>", methods=["POST"])
@@ -538,14 +540,13 @@ def reject_product(product_id):
     if not user or user["role"] not in ["SUPER_ADMIN", "NHAN_VIEN"]:
         return "Bạn không có quyền!", 403
         
-    for p in PRODUCTS:
-        if p["id"] == product_id:
-            p["status"] = "rejected"
-            flash(f"⚠️ Đã từ chối bài đăng sản phẩm: {p['name']}")
-            break
+    conn = get_db()
+    conn.execute("UPDATE products SET status = 'rejected' WHERE id = ?", (product_id,))
+    conn.commit()
+    conn.close()
+    flash("⚠️ Đã từ chối bài đăng sản phẩm.")
     return redirect(url_for("admin_dashboard"))
 
-# CHỈNH SỬA SẢN PHẨM (NÚT SỬA CẠNH NÚT XÓA)
 @app.route("/admin/edit-product/<int:product_id>", methods=["GET", "POST"])
 def edit_product(product_id):
     user = session.get("user")
@@ -553,7 +554,7 @@ def edit_product(product_id):
         return redirect(url_for("login"))
         
     is_admin = user["role"] in ["SUPER_ADMIN", "NHAN_VIEN"]
-    product = next((p for p in PRODUCTS if p["id"] == product_id), None)
+    product = get_product_by_id(product_id)
     
     if not product:
         flash("Không tìm thấy sản phẩm cần sửa!", "warning")
@@ -564,55 +565,66 @@ def edit_product(product_id):
         return redirect(url_for("admin_dashboard"))
         
     if request.method == "POST":
-        product["name"] = request.form.get("name", "").strip()
-        product["group"] = request.form.get("group", "Mật ong")
+        name = request.form.get("name", "").strip()
+        group_name = request.form.get("group", "Mật ong")
         try:
-            product["price"] = int(request.form.get("price", 0))
+            price = int(request.form.get("price", 0))
         except ValueError:
-            pass
+            price = product["price"]
             
-        product["packaging"] = request.form.get("packaging", "").strip()
-        product["origin"] = request.form.get("origin", "").strip()
-        product["ingredients"] = request.form.get("ingredients", "").strip()
-        product["process"] = request.form.get("process", "").strip()
-        product["usage"] = request.form.get("usage", "").strip()
-        product["storage"] = request.form.get("storage", "").strip()
-        
+        packaging = request.form.get("packaging", "").strip()
+        origin = request.form.get("origin", "").strip()
+        ingredients = request.form.get("ingredients", "").strip()
+        process = request.form.get("process", "").strip()
+        usage = request.form.get("usage", "").strip()
+        storage = request.form.get("storage", "").strip()
         image_url = request.form.get("image_url", "").strip()
+        
         uploaded_file = request.files.get("image_file")
         if uploaded_file and uploaded_file.filename != '' and allowed_file(uploaded_file.filename):
-            fname = secure_filename(f"prod_{int(datetime.now().timestamp())}_{uploaded_file.filename}")
-            save_path = os.path.join(app.config['UPLOAD_FOLDER'], fname)
-            uploaded_file.save(save_path)
-            product["image"] = f"/static/uploads/{fname}"
+            # Encode image as base64 data URI so it NEVER gets lost on container restarts!
+            img_bytes = uploaded_file.read()
+            mime_type = uploaded_file.content_type or "image/jpeg"
+            b64_str = base64.b64encode(img_bytes).decode('utf-8')
+            final_img = f"data:{mime_type};base64,{b64_str}"
         elif image_url:
-            product["image"] = image_url
+            final_img = image_url
+        else:
+            final_img = product.get("image", "")
             
-        flash(f"✅ Đã cập nhật thành công sản phẩm: {product['name']}!", "success")
+        conn = get_db()
+        conn.execute('''
+        UPDATE products SET group_name = ?, name = ?, price = ?, packaging = ?, origin = ?, ingredients = ?, process = ?, usage = ?, storage = ?, image = ?
+        WHERE id = ?
+        ''', (group_name, name, price, packaging, origin, ingredients, process, usage, storage, final_img, product_id))
+        conn.commit()
+        conn.close()
+            
+        flash(f"✅ Đã cập nhật và lưu vĩnh viễn sản phẩm: {name}!", "success")
         return redirect(url_for("admin_dashboard"))
         
     return render_template("edit_product.html", product=product, user=user)
 
-# Xóa sản phẩm
 @app.route("/admin/delete-product/<int:product_id>", methods=["POST"])
 def delete_product(product_id):
     user = session.get("user")
     if not user:
         return redirect(url_for("login"))
         
-    global PRODUCTS
     is_admin = user["role"] in ["SUPER_ADMIN", "NHAN_VIEN"]
+    product = get_product_by_id(product_id)
     
-    target_p = next((p for p in PRODUCTS if p["id"] == product_id), None)
-    if target_p:
-        if is_admin or target_p.get("author") == user["name"]:
-            PRODUCTS = [p for p in PRODUCTS if p["id"] != product_id]
-            flash(f"🗑️ Đã xóa sản phẩm: {target_p['name']} thành công!", "success")
+    if product:
+        if is_admin or product.get("author") == user["name"]:
+            conn = get_db()
+            conn.execute("DELETE FROM products WHERE id = ?", (product_id,))
+            conn.commit()
+            conn.close()
+            flash(f"🗑️ Đã xóa vĩnh viễn sản phẩm: {product['name']}!", "success")
         else:
-            flash("⛔ Bạn không có quyền xóa sản phẩm của người khác!", "danger")
+            flash("⛔ Bạn không có quyền xóa sản phẩm này!", "danger")
     return redirect(url_for("admin_dashboard"))
 
-# Đăng sản phẩm mới
 @app.route("/admin/add-product", methods=["POST"])
 def admin_add_product():
     user = session.get("user")
@@ -620,14 +632,15 @@ def admin_add_product():
         return redirect(url_for("login"))
         
     is_admin = user["role"] in ["SUPER_ADMIN", "NHAN_VIEN"]
-    is_approved_partner = (user["role"] == "DOI_TAC" and USERS.get(user["username"], {}).get("approved", False))
+    users = get_all_users()
+    is_approved_partner = (user["role"] == "DOI_TAC" and users.get(user["username"], {}).get("approved"))
     
     if not (is_admin or is_approved_partner):
         flash("⛔ Bạn chưa được Admin cấp quyền đăng bài sản phẩm!", "danger")
         return redirect(url_for("admin_dashboard"))
 
     name = request.form.get("name", "").strip()
-    group = request.form.get("group", "Mật ong")
+    group_name = request.form.get("group", "Mật ong")
     try:
         price = int(request.form.get("price", 0))
     except ValueError:
@@ -641,38 +654,30 @@ def admin_add_product():
     storage = request.form.get("storage", "").strip() or "Bảo quản nơi khô ráo, thoáng mát"
     image_url = request.form.get("image_url", "").strip()
     
+    final_img = image_url
     uploaded_file = request.files.get("image_file")
     if uploaded_file and uploaded_file.filename != '' and allowed_file(uploaded_file.filename):
-        fname = secure_filename(f"prod_{int(datetime.now().timestamp())}_{uploaded_file.filename}")
-        save_path = os.path.join(app.config['UPLOAD_FOLDER'], fname)
-        uploaded_file.save(save_path)
-        image_url = f"/static/uploads/{fname}"
+        img_bytes = uploaded_file.read()
+        mime_type = uploaded_file.content_type or "image/jpeg"
+        b64_str = base64.b64encode(img_bytes).decode('utf-8')
+        final_img = f"data:{mime_type};base64,{b64_str}"
 
     status = "approved" if is_admin else "pending"
+    author = user["name"] if user["role"] == "DOI_TAC" else "Ngọ Phượng Store"
+    date_str = datetime.now().strftime("%d/%m/%Y")
     
-    new_p = {
-        "id": len(PRODUCTS) + 1,
-        "group": group,
-        "name": name,
-        "price": price,
-        "packaging": packaging,
-        "rating": 5,
-        "origin": origin,
-        "ingredients": ingredients,
-        "process": process,
-        "usage": usage,
-        "storage": storage,
-        "image": image_url,
-        "status": status,
-        "author": user["name"] if user["role"] == "DOI_TAC" else "Ngọ Phượng Store",
-        "date": datetime.now().strftime("%d/%m/%Y")
-    }
-    PRODUCTS.append(new_p)
+    conn = get_db()
+    conn.execute('''
+    INSERT INTO products (group_name, name, price, packaging, rating, origin, ingredients, process, usage, storage, image, status, author, date)
+    VALUES (?, ?, ?, ?, 5, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (group_name, name, price, packaging, origin, ingredients, process, usage, storage, final_img, status, author, date_str))
+    conn.commit()
+    conn.close()
     
     if is_admin:
-        flash(f"🎉 Đã đăng thành công sản phẩm: {name} lên website!", "success")
+        flash(f"🎉 Đã đăng thành công và lưu vĩnh viễn sản phẩm: {name}!", "success")
     else:
-        flash(f"🎉 Đã gửi bài đăng sản phẩm: {name}. Bài viết sẽ xuất hiện trên trang chủ ngay sau khi được Admin phê duyệt!", "info")
+        flash(f"🎉 Đã gửi bài đăng sản phẩm: {name}. Bài viết sẽ xuất hiện trên trang chủ ngay sau khi được Admin duyệt!", "info")
         
     return redirect(url_for("admin_dashboard"))
 
@@ -682,11 +687,63 @@ def update_order_status(order_id):
     if not user:
         return redirect(url_for("login"))
     status = request.form.get("status")
-    for order in ORDERS:
-        if order["id"] == order_id:
-            order["status"] = status
-            flash(f"Đã cập nhật đơn hàng #{order_id} sang trạng thái: {status}")
-            break
+    conn = get_db()
+    conn.execute("UPDATE orders SET status = ? WHERE id = ?", (status, order_id))
+    conn.commit()
+    conn.close()
+    flash(f"Đã cập nhật đơn hàng #{order_id} sang trạng thái: {status}")
+    return redirect(url_for("admin_dashboard"))
+
+# ---------------------------------------------------------
+# SAO LƯU & KHÔI PHỤC DỮ LIỆU JSON (1-CLICK BACKUP / RESTORE)
+# ---------------------------------------------------------
+@app.route("/admin/export-backup")
+def export_backup():
+    user = session.get("user")
+    if not user or user["role"] != "SUPER_ADMIN":
+        return "Bạn không có quyền!", 403
+        
+    backup_data = {
+        "products": get_all_products("all"),
+        "articles": get_all_articles(),
+        "orders": get_all_orders(),
+        "users": get_all_users(),
+        "exported_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    
+    return Response(
+        json.dumps(backup_data, ensure_ascii=False, indent=2),
+        mimetype="application/json",
+        headers={"Content-Disposition": f"attachment;filename=nongsan_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"}
+    )
+
+@app.route("/admin/import-backup", methods=["POST"])
+def import_backup():
+    user = session.get("user")
+    if not user or user["role"] != "SUPER_ADMIN":
+        return "Bạn không có quyền!", 403
+        
+    uploaded_file = request.files.get("backup_file")
+    if uploaded_file and uploaded_file.filename != '':
+        try:
+            content = json.load(uploaded_file)
+            conn = get_db()
+            cursor = conn.cursor()
+            
+            if "products" in content and isinstance(content["products"], list):
+                cursor.execute("DELETE FROM products")
+                for p in content["products"]:
+                    cursor.execute('''
+                    INSERT INTO products (id, group_name, name, price, packaging, rating, origin, ingredients, process, usage, storage, image, status, author, date)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (p.get("id"), p.get("group_name", p.get("group")), p.get("name"), p.get("price"), p.get("packaging"), p.get("rating", 5), p.get("origin"), p.get("ingredients"), p.get("process"), p.get("usage"), p.get("storage"), p.get("image"), p.get("status", "approved"), p.get("author", "Ngọ Phượng Store"), p.get("date")))
+                conn.commit()
+                
+            conn.close()
+            flash("🎉 Khôi phục dữ liệu từ file Backup thành công 100%!", "success")
+        except Exception as e:
+            flash(f"❌ Lỗi khi nạp file backup: {e}", "danger")
+            
     return redirect(url_for("admin_dashboard"))
 
 if __name__ == "__main__":

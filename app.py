@@ -7,7 +7,7 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "nongsan_ngophuong_secret_key_2026")
+app.secret_key = "nongsan_ngophuong_secret_key_2026"
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -18,6 +18,43 @@ BACKUP_JSON_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'non
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# ---------------------------------------------------------
+# DANH SÁCH 24 SẢN PHẨM GỐC CHUẨN (KHÔNG BAO GIỜ BỊ RỖNG)
+# ---------------------------------------------------------
+SEED_PRODUCTS = [
+    (1, 10, "Mật ong", "Mật ong cỏ kim Cao Bằng", 220000, "Chai 500ml", 5, "Hà Giang - Cao Bằng", "100% mật hoa cỏ kim tự nhiên", "Quay li tâm thủ công truyền thống", "Pha nước ấm uống mỗi sáng hoặc làm gia vị món ăn", "Nơi khô ráo, thoáng mát, tránh ánh nắng trực tiếp", "", "approved", "Ngọ Phượng Store", "27/09/2026"),
+    (2, 20, "Mật ong", "Mật ong bạc hà Hà Giang", 350000, "Chai 500ml", 5, "Cao nguyên đá Đồng Văn", "Mật hoa bạc hà tự nhiên", "Thu hoạch chính vụ đông", "Uống trực tiếp, pha trà thảo mộc", "Nhiệt độ phòng, tránh ánh nắng", "", "approved", "Ngọ Phượng Store", "27/09/2026"),
+    (3, 30, "Mật ong", "Mật ong Sú vẹt Giao Thủy", 250000, "Chai 500ml", 5, "Vườn quốc gia Xuân Thủy", "Mật hoa sú vẹt rừng ngập mặn", "Khai thác tự nhiên sạch", "Bồi bổ sức khỏe, tăng đề kháng", "Nơi khô ráo, thoáng mát", "", "approved", "Ngọ Phượng Store", "27/09/2026"),
+    (4, 40, "Mật ong", "Mật ong hoa nhãn Hưng Yên", 180000, "Chai 500ml", 5, "Hưng Yên", "100% mật hoa nhãn thơm lừng", "Quay mật chuẩn VietGAP", "Pha nước giải khát, chế biến món ăn", "Tránh nắng trực tiếp", "", "approved", "Ngọ Phượng Store", "27/09/2026"),
+    (5, 50, "Nghệ & Thảo dược", "Tinh bột nghệ vàng Nghệ An", 200000, "Hũ 500g", 5, "Nghệ An", "Nghệ vàng củ tươi nguyên chất", "Lọc tách xơ, dầu và tạp chất", "Uống cùng mật ong ấm trị đau dạ dày", "Đậy kín hũ sau khi dùng", "", "approved", "Ngọ Phượng Store", "27/09/2026"),
+    (6, 60, "Nghệ & Thảo dược", "Tinh bột nghệ đen Nghệ An", 220000, "Hũ 500g", 5, "Nghệ An", "Nghệ đen nguyên chất 100%", "Sấy lạnh công nghệ cao", "Hỗ trợ tiêu hóa, bồi bổ phụ nữ sau sinh", "Bảo quản nơi mát mẻ", "", "approved", "Ngọ Phượng Store", "27/09/2026"),
+    (7, 70, "Nghệ & Thảo dược", "Bột sắn dây ướp hoa bưởi", 160000, "Túi zip 500g", 5, "Kinh Môn - Hải Dương", "Củ sắn dây ta, hoa bưởi tươi", "Lọc lắng 25 lần, sấy khô tiệt trùng", "Pha uống sống hoặc nấu chín thanh nhiệt", "Bảo quản nơi khô ráo", "", "approved", "Ngọ Phượng Store", "27/09/2026"),
+    (8, 80, "Ngũ cốc dinh dưỡng", "Ngũ cốc Lúa mạch nguyên cám", 110000, "Hũ 500g", 5, "Đồng bằng sông Hồng", "Lúa mạch nguyên cám giàu xơ", "Rang sấy nhiệt thấp giữ nguyên vitamin", "Ăn kèm sữa chua, sữa hạt", "Đậy kín nắp hộp", "", "approved", "Ngọ Phượng Store", "27/09/2026"),
+    (9, 90, "Ngũ cốc dinh dưỡng", "Ngũ cốc Bắp ngô sấy giòn", 90000, "Gói 500g", 5, "Mộc Châu - Sơn La", "Ngô ngọt tự nhiên không đường hóa học", "Sấy thăng hoa giòn rụm", "Bữa sáng nhẹ, ăn vặt lành mạnh", "Nơi khô ráo", "", "approved", "HTX Nông Sản Mộc Châu", "27/09/2026"),
+    (10, 100, "Ngũ cốc dinh dưỡng", "Ngũ cốc Lúa mỳ dinh dưỡng", 105000, "Gói 500g", 5, "Phú Thọ", "Lúa mỳ nguyên cám chọn lọc", "Nghiền sấy tiệt trùng", "Chế độ ăn kiêng, tập gym", "Nơi thoáng mát", "", "approved", "Ngọ Phượng Store", "27/09/2026"),
+    (11, 110, "Ngũ cốc dinh dưỡng", "Ngũ cốc Granola Siêu Hạt", 175000, "Hũ 500g", 5, "Tây Nguyên", "Hạt điều, óc chó, macca, hạnh nhân, yến mạch", "Nướng mật ong nguyên chất", "Ăn liền cùng sữa chua, sinh tố", "Ngăn mát tủ lạnh sau mở nắp", "", "approved", "Ngọ Phượng Store", "27/09/2026"),
+    (12, 120, "Ngũ cốc dinh dưỡng", "Hạt Macca sấy nứt vỏ Đắk Lắk", 160000, "Hũ 500g", 5, "Đắk Lắk", "100% hạt macca size đại VIP", "Sấy nứt tự nhiên kèm dụng cụ tách", "Ăn trực tiếp 5-10 hạt mỗi ngày", "Nơi khô ráo, đậy kín", "", "approved", "Ngọ Phượng Store", "27/09/2026"),
+    (13, 130, "Chè & Món ngọt đặc sản", "Chè bưởi thơm ngon An Giang", 35000, "Cốc 350ml", 5, "An Giang", "Cùi bưởi giòn sần sật, nước cốt dừa béo ngậy", "Khử đắng thủ công gia truyền", "Ăn kèm đá lạnh giải khát", "Bảo quản ngăn mát 2-3 ngày", "", "approved", "Ngọ Phượng Store", "27/09/2026"),
+    (14, 140, "Chè & Món ngọt đặc sản", "Chè bắp nước cốt dừa Hội An", 30000, "Cốc 350ml", 5, "Hội An", "Bắp non dẻo ngọt, cốt dừa tươi", "Nấu bắp ninh dẻo sánh thơm", "Dùng tráng miệng, giải nhiệt", "Dùng trong ngày", "", "approved", "Ngọ Phượng Store", "27/09/2026"),
+    (15, 150, "Chè & Món ngọt đặc sản", "Chè hạt sen long nhãn Phố Hiến", 45000, "Cốc 350ml", 5, "Huế - Hưng Yên", "Hạt sen bở tơi, long nhãn tiến vua, đường phèn", "Lồng nhãn thủ công nấu mềm ngọt thanh", "An thần, thanh nhiệt, ngủ ngon", "Bảo quản ngăn mát tủ lạnh", "", "approved", "Ngọ Phượng Store", "27/09/2026"),
+    (16, 160, "Chè & Món ngọt đặc sản", "Chè đậu xanh cốt dừa truyền thống", 25000, "Cốc 350ml", 5, "Hà Nội", "Đậu xanh tiêu xay vỡ, cốt dừa Bến Tre", "Nấu sánh dẻo thơm ngậy", "Thanh nhiệt mùa hè", "Bảo quản mát", "", "approved", "Ngọ Phượng Store", "27/09/2026"),
+    (17, 170, "Chè & Món ngọt đặc sản", "Chè đậu đen xanh lòng dầm đá", 25000, "Cốc 350ml", 5, "Hà Nội", "Đậu đen xanh lòng hảo hạng", "Ninh nhừ tơi hạt, ngọt thanh", "Bổ thận, mát gan, giải độc", "Dùng ngon trong ngày", "", "approved", "Ngọ Phượng Store", "27/09/2026"),
+    (18, 180, "Nông sản mùa vụ & Trà", "Thạch đen Cao Bằng (Sương sáo)", 45000, "Hộp 1kg", 5, "Thạch An - Cao Bằng", "Cây thạch đen tự nhiên vùng núi", "Nấu thủ công theo công thức Tày - Nùng", "Cắt miếng ăn kèm chè, sữa tươi, sữa đậu", "Ngăn mát tủ lạnh 5-7 ngày", "", "approved", "Ngọ Phượng Store", "27/09/2026"),
+    (19, 190, "Nông sản mùa vụ & Trà", "Trà Shan Tuyết cổ thụ Suối Giàng", 250000, "Hộp 200g", 5, "Yên Bái", "1 búp 1 lá chè cổ thụ trên 300 năm", "Sao tay truyền thống của đồng bào Mông", "Pha nước sôi 85°C thưởng thức", "Bảo quản nơi khô ráo, tránh mùi lạ", "", "approved", "Ngọ Phượng Store", "27/09/2026"),
+    (20, 200, "Nông sản mùa vụ & Trà", "Hồng sấy treo gió Mộc Châu", 190000, "Hộp 500g", 5, "Mộc Châu", "Hồng trứng tuyển chọn vỏ mỏng", "Treo gió tự nhiên theo công nghệ Nhật Bản", "Ăn trực tiếp thưởng thức mật hồng dẻo", "Bảo quản tủ mát", "", "approved", "HTX Nông Sản Mộc Châu", "27/09/2026"),
+    (21, 210, "Nông sản mùa vụ & Trà", "Tỏi cô đơn Lý Sơn chính hiệu", 280000, "Túi 500g", 5, "Đảo Lý Sơn - Quảng Ngãi", "100% tỏi một nhánh đất núi lửa Lý Sơn", "Phơi khô tự nhiên dưới nắng biển", "Làm gia vị, ngâm mật ong/rượu chữa bệnh", "Treo nơi thoáng mát", "", "approved", "Ngọ Phượng Store", "27/09/2026"),
+    (22, 220, "Nông sản mùa vụ & Trà", "Miến dong Phia Đén Cao Bằng", 65000, "Gói 500g", 5, "Nguyên Bình - Cao Bằng", "100% củ dong riềng đỏ vùng núi cao", "Làm thủ công không tẩy hóa chất, sợi dai dòn", "Nấu canh măng, lẩu, xào lòng mề", "Để nơi khô ráo", "", "approved", "Ngọ Phượng Store", "27/09/2026"),
+    (23, 230, "Nông sản mùa vụ & Trà", "Măng nứa khô Tây Bắc sạch", 170000, "Túi 500g", 5, "Điện Biên", "Măng nứa tép non phơi nắng", "Thu hái rừng tự nhiên, sấy nắng sạch", "Ngâm mềm nấu canh sườn, gà, vịt", "Buộc kín miệng túi", "", "approved", "Ngọ Phượng Store", "27/09/2026"),
+    (24, 240, "Nông sản mùa vụ & Trà", "Gạo Séng Cù Mường Lò dẻo thơm", 185000, "Túi 5kg", 5, "Mường Lò - Nghĩa Lộ", "Lúa Séng Cù trồng ruộng bậc thang", "Xát mộc giữ trọn lớp cám dưỡng chất", "Nấu cơm dẻo ngọt đậm đà", "Thùng đậy kín chống ẩm", "", "approved", "Ngọ Phượng Store", "27/09/2026")
+]
+
+SEED_ARTICLES = [
+    (1, "27/09/2026", "Bí quyết chọn Mật ong hoa rừng chuẩn vị mùa vụ mới", "Mật ong tự nhiên đặm đà, thơm dịu và cách phân biệt mật ong nguyên chất với mật pha đường...", "Mật ong tự nhiên luôn có mùi thơm đặc trưng của hoa rừng, độ quánh tự nhiên...", "Super Admin"),
+    (2, "26/09/2026", "Công dụng tuyệt vời của Tinh bột nghệ vàng kết hợp mật ong", "Uống tinh bột nghệ kết hợp mật ong mỗi sáng giúp bảo vệ niêm mạc dạ dày và dưỡng da trắng mịn...", "Curcumin trong tinh bột nghệ giúp làm lành tổn thương dạ dày và tăng sức đề kháng...", "Super Admin"),
+    (3, "25/09/2026", "Ngũ cốc Granola siêu hạt - Bữa sáng nhanh gọn tràn đầy năng lượng", "Sự kết hợp hoàn hảo giữa hạt điều, hạnh nhân, óc chó và yến mạch cho người bận rộn...", "Cung cấp nguồn chất xơ và protein tự nhiên lành mạnh...", "Super Admin"),
+    (4, "24/09/2026", "Hành trình mang đặc sản vùng cao Tây Bắc về với bàn ăn phố thị", "Những sản phẩm OCOP đạt chuẩn hữu cơ từ các hợp tác xã vùng cao được kiểm định nghiêm ngặt...", "Nông Sản Ngọ Phượng tự hào kết nối tinh hoa đặc sản mọi miền...", "Super Admin")
+]
 
 # ---------------------------------------------------------
 # DATABASE ENGINE (SQLITE & AUTO JSON SYNC)
@@ -76,12 +113,6 @@ def init_db():
     )
     ''')
     
-    try:
-        cursor.execute("ALTER TABLE products ADD COLUMN sort_order INTEGER DEFAULT 0")
-        conn.commit()
-    except Exception:
-        pass
-        
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS articles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -93,13 +124,6 @@ def init_db():
     )
     ''')
     
-    # Auto-migration: if articles table exists without content column, add it safely
-    try:
-        cursor.execute("ALTER TABLE articles ADD COLUMN content TEXT")
-        conn.commit()
-    except Exception:
-        pass
-        
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -128,32 +152,8 @@ def init_db():
     ''')
     
     conn.commit()
-    
-    if os.path.exists(BACKUP_JSON_PATH):
-        try:
-            with open(BACKUP_JSON_PATH, "r", encoding="utf-8") as f:
-                backup = json.load(f)
-                
-            cursor.execute("SELECT COUNT(*) FROM products")
-            if cursor.fetchone()[0] == 0 and "products" in backup:
-                for p in backup["products"]:
-                    cursor.execute('''
-                    INSERT INTO products (id, sort_order, group_name, name, price, packaging, rating, origin, ingredients, process, usage, storage, image, status, author, date)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (p.get("id"), p.get("sort_order", p.get("id", 0)), p.get("group_name", p.get("group")), p.get("name"), p.get("price"), p.get("packaging"), p.get("rating", 5), p.get("origin"), p.get("ingredients"), p.get("process"), p.get("usage"), p.get("storage"), p.get("image"), p.get("status", "approved"), p.get("author", "Ngọ Phượng Store"), p.get("date")))
-                conn.commit()
-                
-            cursor.execute("SELECT COUNT(*) FROM articles")
-            if cursor.fetchone()[0] == 0 and "articles" in backup:
-                for a in backup["articles"]:
-                    cursor.execute('''
-                    INSERT INTO articles (id, date, title, snippet, content, author)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                    ''', (a.get("id"), a.get("date"), a.get("title"), a.get("snippet"), a.get("content", ""), a.get("author", "Super Admin")))
-                conn.commit()
-        except Exception as e:
-            print(f"Error loading backup JSON: {e}")
-            
+
+    # Ensure users exist
     cursor.execute("SELECT COUNT(*) FROM users")
     if cursor.fetchone()[0] == 0:
         cursor.execute("INSERT INTO users VALUES ('admin', '123', 'SUPER_ADMIN', 'Super Admin Ngọ Phượng', 1)")
@@ -161,18 +161,23 @@ def init_db():
         cursor.execute("INSERT INTO users VALUES ('doitac_mocchau', '123', 'DOI_TAC', 'HTX Nông Sản Mộc Châu', 1)")
         cursor.execute("INSERT INTO users VALUES ('doitac_dalat', '123', 'DOI_TAC', 'Nông Trại Xanh Đà Lạt', 0)")
         conn.commit()
-        
+
+    # Auto-seed 24 products if empty
+    cursor.execute("SELECT COUNT(*) FROM products")
+    if cursor.fetchone()[0] == 0:
+        cursor.executemany('''
+        INSERT INTO products (id, sort_order, group_name, name, price, packaging, rating, origin, ingredients, process, usage, storage, image, status, author, date)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', SEED_PRODUCTS)
+        conn.commit()
+
+    # Auto-seed articles if empty
     cursor.execute("SELECT COUNT(*) FROM articles")
     if cursor.fetchone()[0] == 0:
-        default_articles = [
-            ("26/09/2026", "Bí quyết chọn Mật ong hoa rừng chuẩn vị mùa vụ mới", "Mật ong tự nhiên đặm đà, thơm dịu và cách phân biệt mật ong nguyên chất với mật pha đường...", "Mật ong tự nhiên luôn có mùi thơm đặc trưng, khi rót tạo dòng chảy sánh mịn...", "Super Admin"),
-            ("25/09/2026", "Công dụng tuyệt vời của Tinh bột nghệ vàng kết hợp mật ong", "Uống tinh bột nghệ kết hợp mật ong mỗi sáng giúp bảo vệ niêm mạc dạ dày và dưỡng da trắng mịn...", "Curcumin trong tinh bột nghệ giúp kháng viêm, làm lành vết loét dạ dày hiệu quả...", "Super Admin"),
-            ("24/09/2026", "Ngũ cốc Granola siêu hạt - Bữa sáng nhanh gọn tràn đầy năng lượng", "Sự kết hợp hoàn hảo giữa hạt điều, hạnh nhân, óc chó và yến mạch cho người bận rộn...", "Ngũ cốc nướng mật ong cung cấp nguồn protein thực vật và chất xơ dồi dào...", "Super Admin"),
-            ("23/09/2026", "Hành trình mang đặc sản vùng cao Tây Bắc về với bàn ăn phố thị", "Những sản phẩm OCOP đạt chuẩn hữu cơ từ các hợp tác xã vùng cao được kiểm định nghiêm ngặt...", "Nông Sản Ngọ Phượng tự hào đồng hành cùng bà con vùng cao...", "Super Admin")
-        ]
         cursor.executemany('''
-        INSERT INTO articles (date, title, snippet, content, author) VALUES (?, ?, ?, ?, ?)
-        ''', default_articles)
+        INSERT INTO articles (id, date, title, snippet, content, author)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ''', SEED_ARTICLES)
         conn.commit()
 
     conn.close()
@@ -187,6 +192,13 @@ def get_all_products(status="approved"):
     else:
         rows = conn.execute("SELECT * FROM products WHERE status = ? ORDER BY sort_order ASC, id DESC", (status,)).fetchall()
     conn.close()
+    
+    if not rows and status == "approved":
+        init_db()
+        conn = get_db()
+        rows = conn.execute("SELECT * FROM products WHERE status = 'approved' ORDER BY sort_order ASC, id DESC").fetchall()
+        conn.close()
+        
     return [dict(row) for row in rows]
 
 def get_product_by_id(p_id):
@@ -199,6 +211,11 @@ def get_all_articles():
     conn = get_db()
     rows = conn.execute("SELECT * FROM articles ORDER BY id DESC").fetchall()
     conn.close()
+    if not rows:
+        init_db()
+        conn = get_db()
+        rows = conn.execute("SELECT * FROM articles ORDER BY id DESC").fetchall()
+        conn.close()
     return [dict(row) for row in rows]
 
 def get_all_orders():
